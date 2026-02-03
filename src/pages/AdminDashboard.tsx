@@ -188,8 +188,8 @@ const AdminDashboard = () => {
               <h3 className="font-semibold font-display mb-4">Platform Health</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                  <span className="text-sm text-muted-foreground">Convenience Fee</span>
-                  <span className="font-semibold">{stats.convenienceFee}%</span>
+                  <span className="text-sm text-muted-foreground">Service Charge</span>
+                  <span className="font-semibold">{stats.serviceFee}%</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
                   <span className="text-sm text-muted-foreground">Active Sessions</span>
