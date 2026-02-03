@@ -75,14 +75,14 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      {/* Header - 56px height for proper touch targets */}
+    <div className="min-h-screen bg-background pb-28">
+      {/* Header - 56px height, proper touch targets */}
       <div className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
-        <div className="flex items-center gap-4 px-4 h-14">
+        <div className="flex items-center gap-3 px-4 h-14">
           <Button
             variant="ghost"
             size="icon"
-            className="h-11 w-11 shrink-0"
+            className="h-11 w-11 shrink-0 rounded-lg"
             onClick={onBack}
           >
             <ArrowLeft className="h-5 w-5" />
