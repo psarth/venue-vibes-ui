@@ -1,8 +1,6 @@
-import { useState, useMemo } from 'react';
-import { ArrowLeft, MapPin, Star, Check, X, ChevronLeft, ChevronRight, Wifi, Car, Droplets, Wind, Dumbbell, Coffee, Shield, Clock } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { ArrowLeft, MapPin, Star, Check, X, ChevronLeft, ChevronRight, Wifi, Car, Droplets, Wind, Dumbbell, Coffee, Shield, Clock, Zap, ShowerHead, Utensils, Video, ShoppingBag, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Venue, Slot, generateSlots } from '@/data/venues';
 import { cn } from '@/lib/utils';
 import { format, addDays } from 'date-fns';
@@ -14,42 +12,23 @@ interface VenueDetailProps {
 }
 
 const amenityIcons: Record<string, React.ReactNode> = {
-  'Parking': <Car className="h-4 w-4" />,
-  'Changing Room': <Droplets className="h-4 w-4" />,
-  'AC': <Wind className="h-4 w-4" />,
-  'Drinking Water': <Droplets className="h-4 w-4" />,
-  'Equipment Rental': <Dumbbell className="h-4 w-4" />,
-  'Floodlights': <Clock className="h-4 w-4" />,
-  'Restroom': <Droplets className="h-4 w-4" />,
-  'First Aid': <Shield className="h-4 w-4" />,
-  'Coaching': <Dumbbell className="h-4 w-4" />,
-  'Ball Machine': <Dumbbell className="h-4 w-4" />,
-  'Cafeteria': <Coffee className="h-4 w-4" />,
-  'Pro Shop': <Dumbbell className="h-4 w-4" />,
-  'Scoreboard': <Clock className="h-4 w-4" />,
-  'Video Analysis': <Clock className="h-4 w-4" />,
-  'Equipment': <Dumbbell className="h-4 w-4" />,
-  'Bowling Machine': <Dumbbell className="h-4 w-4" />,
-  'WiFi': <Wifi className="h-4 w-4" />,
-};
-
-// Generate star rating display
-const renderStars = (rating: number) => {
-  const stars = [];
-  const fullStars = Math.floor(rating);
-  
-  for (let i = 0; i < 5; i++) {
-    if (i < fullStars) {
-      stars.push(
-        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-      );
-    } else {
-      stars.push(
-        <Star key={i} className="h-4 w-4 text-muted-foreground/30" />
-      );
-    }
-  }
-  return stars;
+  'Parking': <Car className="h-5 w-5" />,
+  'Changing Room': <ShowerHead className="h-5 w-5" />,
+  'AC': <Wind className="h-5 w-5" />,
+  'Drinking Water': <Droplets className="h-5 w-5" />,
+  'Equipment Rental': <Dumbbell className="h-5 w-5" />,
+  'Floodlights': <Zap className="h-5 w-5" />,
+  'Restroom': <ShowerHead className="h-5 w-5" />,
+  'First Aid': <Shield className="h-5 w-5" />,
+  'Coaching': <Timer className="h-5 w-5" />,
+  'Ball Machine': <Dumbbell className="h-5 w-5" />,
+  'Cafeteria': <Utensils className="h-5 w-5" />,
+  'Pro Shop': <ShoppingBag className="h-5 w-5" />,
+  'Scoreboard': <Timer className="h-5 w-5" />,
+  'Video Analysis': <Video className="h-5 w-5" />,
+  'Equipment': <Dumbbell className="h-5 w-5" />,
+  'Bowling Machine': <Dumbbell className="h-5 w-5" />,
+  'WiFi': <Wifi className="h-5 w-5" />,
 };
 
 export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
@@ -57,6 +36,7 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'details' | 'slots'>('details');
+  const [touchStart, setTouchStart] = useState<number | null>(null);
 
   // Generate next 7 days
   const dates = useMemo(() => {
@@ -78,21 +58,37 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
     );
   };
 
+  // Swipe handlers for carousel
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) nextImage();
+      else prevImage();
+    }
+    setTouchStart(null);
+  };
+
   return (
-    <div className="min-h-screen bg-background pb-28">
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-card border-b border-border">
-        <div className="flex items-center gap-3 px-4 py-3">
+    <div className="min-h-screen bg-background pb-32">
+      {/* Header - 56px height for proper touch targets */}
+      <div className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
+        <div className="flex items-center gap-4 px-4 h-14">
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10"
+            className="h-11 w-11 shrink-0"
             onClick={onBack}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-lg text-foreground truncate">{venue.name}</h1>
+            <h1 className="font-bold text-lg text-foreground truncate leading-tight">{venue.name}</h1>
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
               <span className="truncate">{venue.location}</span>
@@ -101,36 +97,46 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
         </div>
       </div>
 
-      {/* Image Carousel */}
-      <div className="relative h-56 bg-muted">
+      {/* Image Carousel - Swipeable with 5+ images */}
+      <div 
+        className="relative h-56 bg-muted"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <img
           src={venue.gallery[currentImageIndex]}
           alt={`${venue.name} - Image ${currentImageIndex + 1}`}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-opacity duration-300"
         />
         {venue.gallery.length > 1 && (
           <>
             <button
               onClick={prevImage}
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors shadow-md"
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-card/95 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors shadow-lg"
+              aria-label="Previous image"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-6 w-6" />
             </button>
             <button
               onClick={nextImage}
-              className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors shadow-md"
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-card/95 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors shadow-lg"
+              aria-label="Next image"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-6 w-6" />
             </button>
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+            {/* Image counter & dots */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-foreground/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
               {venue.gallery.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
                   className={cn(
-                    "h-2 w-2 rounded-full transition-colors",
-                    index === currentImageIndex ? "bg-primary-foreground w-4" : "bg-primary-foreground/50"
+                    "h-2 rounded-full transition-all duration-200",
+                    index === currentImageIndex 
+                      ? "w-4 bg-primary-foreground" 
+                      : "w-2 bg-primary-foreground/50 hover:bg-primary-foreground/70"
                   )}
+                  aria-label={`Go to image ${index + 1}`}
                 />
               ))}
             </div>
@@ -138,19 +144,19 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
         )}
         
         {/* Rating Badge */}
-        <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-card/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-card/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
           <span className="text-sm font-bold text-foreground">{venue.rating}</span>
-          <span className="text-xs text-muted-foreground">({venue.reviewCount})</span>
+          <span className="text-xs text-muted-foreground">({venue.reviewCount}+)</span>
         </div>
       </div>
 
-      {/* Tab Buttons - Equal width */}
-      <div className="flex border-b border-border bg-card">
+      {/* Tab Buttons - Equal width, 48px height for touch */}
+      <div className="flex border-b-2 border-border bg-card">
         <button
           onClick={() => setActiveTab('details')}
           className={cn(
-            "flex-1 py-3.5 text-base font-semibold transition-colors relative",
+            "flex-1 h-12 text-base font-semibold transition-colors relative",
             activeTab === 'details' 
               ? "text-primary" 
               : "text-muted-foreground hover:text-foreground"
@@ -164,7 +170,7 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
         <button
           onClick={() => setActiveTab('slots')}
           className={cn(
-            "flex-1 py-3.5 text-base font-semibold transition-colors relative",
+            "flex-1 h-12 text-base font-semibold transition-colors relative",
             activeTab === 'slots' 
               ? "text-primary" 
               : "text-muted-foreground hover:text-foreground"
@@ -179,53 +185,53 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
 
       {/* Details Tab Content */}
       {activeTab === 'details' && (
-        <div>
-          {/* Description */}
-          <div className="px-4 py-4 border-b border-border bg-card">
+        <div className="divide-y divide-border">
+          {/* Description - 16px padding */}
+          <div className="px-4 py-4 bg-card">
             <h2 className="font-bold text-lg text-foreground mb-3">About this venue</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {venue.description}
             </p>
-            <p className="text-sm text-muted-foreground leading-relaxed mt-3">
+            <p className="text-sm text-muted-foreground leading-relaxed mt-4">
               Whether you're a beginner looking to learn the basics or a seasoned player wanting to practice your skills, this venue offers the perfect environment. The well-maintained facilities and professional setup ensure a great experience every time you visit.
             </p>
           </div>
 
-          {/* Amenities with icons */}
-          <div className="px-4 py-4 border-b border-border bg-card">
+          {/* Amenities with icons - Grid layout */}
+          <div className="px-4 py-4 bg-card">
             <h2 className="font-bold text-lg text-foreground mb-4">Amenities</h2>
             <div className="grid grid-cols-2 gap-3">
               {venue.amenities.map((amenity) => (
                 <div 
                   key={amenity} 
-                  className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg"
+                  className="flex items-center gap-3 p-3 bg-accent/40 rounded-xl border border-border/50"
                 >
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                    {amenityIcons[amenity] || <Check className="h-4 w-4" />}
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    {amenityIcons[amenity] || <Check className="h-5 w-5" />}
                   </div>
-                  <span className="text-sm font-medium text-foreground">{amenity}</span>
+                  <span className="text-sm font-medium text-foreground leading-tight">{amenity}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Rules */}
+          {/* Rules - Clear numbered list */}
           <div className="px-4 py-4 bg-card">
             <h2 className="font-bold text-lg text-foreground mb-4">Venue Rules</h2>
             <ul className="space-y-3">
               {venue.rules.map((rule, index) => (
                 <li key={index} className="flex items-start gap-3">
-                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <span className="text-xs font-bold text-primary">{index + 1}</span>
                   </div>
-                  <span className="text-sm text-muted-foreground">{rule}</span>
+                  <span className="text-sm text-muted-foreground leading-relaxed pt-1">{rule}</span>
                 </li>
               ))}
               <li className="flex items-start gap-3">
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <span className="text-xs font-bold text-primary">{venue.rules.length + 1}</span>
                 </div>
-                <span className="text-sm text-muted-foreground">Please arrive 10 minutes before your slot time</span>
+                <span className="text-sm text-muted-foreground leading-relaxed pt-1">Please arrive 10 minutes before your slot time</span>
               </li>
             </ul>
           </div>
@@ -234,11 +240,11 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
 
       {/* Slots Tab Content */}
       {activeTab === 'slots' && (
-        <div>
-          {/* Date Selector - Horizontal scroll */}
-          <div className="px-4 py-4 border-b border-border bg-card">
-            <h2 className="font-bold text-lg text-foreground mb-3">Select Date</h2>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        <div className="divide-y divide-border">
+          {/* Date Selector - Horizontal scroll with proper touch targets */}
+          <div className="px-4 py-4 bg-card">
+            <h2 className="font-bold text-lg text-foreground mb-4">Select Date</h2>
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
               {dates.map((date) => {
                 const isSelected = format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
                 const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
@@ -250,21 +256,21 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
                       setSelectedSlot(null);
                     }}
                     className={cn(
-                      "flex flex-col items-center min-w-[64px] py-2.5 px-3 rounded-xl border-2 transition-all",
+                      "flex flex-col items-center min-w-[72px] py-3 px-4 rounded-xl border-2 transition-all",
                       isSelected
-                        ? "bg-primary text-primary-foreground border-primary shadow-md"
+                        ? "bg-primary text-primary-foreground border-primary shadow-lg"
                         : "bg-card border-border hover:border-primary/50"
                     )}
                   >
                     <span className={cn(
-                      "text-xs font-medium",
-                      isSelected ? "text-primary-foreground" : "text-muted-foreground"
+                      "text-xs font-semibold uppercase tracking-wide",
+                      isSelected ? "text-primary-foreground/90" : "text-muted-foreground"
                     )}>
                       {isToday ? 'Today' : format(date, 'EEE')}
                     </span>
-                    <span className="text-xl font-bold">{format(date, 'd')}</span>
+                    <span className="text-2xl font-bold my-0.5">{format(date, 'd')}</span>
                     <span className={cn(
-                      "text-xs",
+                      "text-xs font-medium",
                       isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
                     )}>{format(date, 'MMM')}</span>
                   </button>
@@ -273,56 +279,64 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
             </div>
           </div>
 
-          {/* Slot List */}
+          {/* Slot List - Vertical with clear status indicators */}
           <div className="px-4 py-4 bg-card">
-            <h2 className="font-bold text-lg text-foreground mb-3">Available Slots</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-lg text-foreground">Available Slots</h2>
+              <span className="text-sm text-muted-foreground">
+                {slots.filter(s => s.available).length} available
+              </span>
+            </div>
             <div className="space-y-3">
               {slots.map((slot) => (
-                <div
+                <button
                   key={slot.id}
                   onClick={() => slot.available && setSelectedSlot(slot)}
+                  disabled={!slot.available}
                   className={cn(
-                    "flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer",
-                    !slot.available && "opacity-50 cursor-not-allowed bg-muted border-muted",
-                    slot.available && selectedSlot?.id !== slot.id && "hover:border-primary/50 bg-card border-border",
-                    selectedSlot?.id === slot.id && "border-primary bg-primary/5 shadow-md"
+                    "w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left",
+                    !slot.available && "opacity-60 cursor-not-allowed bg-muted/50 border-muted",
+                    slot.available && selectedSlot?.id !== slot.id && "hover:border-primary/50 bg-card border-border hover:shadow-md",
+                    selectedSlot?.id === slot.id && "border-primary bg-primary/5 shadow-lg ring-1 ring-primary/20"
                   )}
                 >
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      "h-10 w-10 rounded-full flex items-center justify-center",
-                      slot.available ? "bg-green-100 text-green-600" : "bg-red-100 text-red-500"
+                      "h-11 w-11 rounded-xl flex items-center justify-center shrink-0",
+                      slot.available 
+                        ? "bg-green-100 text-green-600" 
+                        : "bg-muted text-muted-foreground"
                     )}>
                       {slot.available ? <Check className="h-5 w-5" /> : <X className="h-5 w-5" />}
                     </div>
                     <div>
                       <p className="font-semibold text-base text-foreground">{slot.time}</p>
-                      <p className="text-sm text-muted-foreground capitalize">{slot.period} slot</p>
+                      <p className="text-sm text-muted-foreground capitalize">{slot.period} session</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-lg text-primary">₹{slot.price}</p>
                     <p className={cn(
-                      "text-xs font-medium",
-                      slot.available ? "text-green-600" : "text-red-500"
+                      "text-xs font-semibold uppercase tracking-wide",
+                      slot.available ? "text-green-600" : "text-muted-foreground"
                     )}>
                       {slot.available ? 'Available' : 'Booked'}
                     </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-4 z-50 shadow-lg">
+      {/* Sticky Bottom Bar - Enhanced with shadow and proper height */}
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-4 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
         <div className="flex items-center justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             {selectedSlot ? (
               <>
-                <p className="text-sm text-muted-foreground">{format(selectedDate, 'EEE, d MMM')} • {selectedSlot.time}</p>
+                <p className="text-sm text-muted-foreground truncate">{format(selectedDate, 'EEE, d MMM')} • {selectedSlot.time}</p>
                 <p className="text-2xl font-bold text-primary">₹{selectedSlot.price}</p>
               </>
             ) : (
@@ -334,7 +348,7 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
           </div>
           <Button 
             size="lg" 
-            className="h-12 px-8 text-base font-semibold"
+            className="h-12 px-6 text-base font-semibold rounded-xl shrink-0 shadow-md"
             disabled={!selectedSlot}
             onClick={() => selectedSlot && onBook(selectedSlot)}
           >
