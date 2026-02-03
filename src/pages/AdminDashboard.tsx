@@ -1,544 +1,233 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, Shield, Users, Building2, Calendar, Settings,
-  TrendingUp, DollarSign, BarChart3, ChevronRight, Search, Filter,
-  Download, IndianRupee, Activity, UserCheck, AlertCircle
+  LayoutDashboard, Users, Building2, Receipt, Settings, LogOut, Menu, X,
+  TrendingUp, DollarSign, CalendarCheck, Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 
-interface PlatformStats {
-  totalUsers: number;
-  totalOwners: number;
-  totalVenues: number;
-  totalBookings: number;
-  totalRevenue: number;
-  serviceFee: number;
-}
+type AdminView = 'dashboard' | 'users' | 'venues' | 'transactions' | 'settings';
 
-// Mock data
 const revenueData = [
-  { name: 'Jan', revenue: 125000 },
-  { name: 'Feb', revenue: 148000 },
-  { name: 'Mar', revenue: 162000 },
-  { name: 'Apr', revenue: 175000 },
-  { name: 'May', revenue: 198000 },
-  { name: 'Jun', revenue: 215000 },
+  { date: 'Jan 28', revenue: 45000 },
+  { date: 'Jan 29', revenue: 52000 },
+  { date: 'Jan 30', revenue: 48000 },
+  { date: 'Jan 31', revenue: 61000 },
+  { date: 'Feb 1', revenue: 55000 },
+  { date: 'Feb 2', revenue: 73000 },
+  { date: 'Feb 3', revenue: 68000 },
 ];
 
 const sportDistribution = [
-  { name: 'Badminton', value: 35, color: 'hsl(var(--primary))' },
-  { name: 'Football', value: 28, color: 'hsl(var(--success))' },
-  { name: 'Cricket', value: 22, color: 'hsl(var(--warning))' },
-  { name: 'Tennis', value: 15, color: 'hsl(var(--secondary))' },
+  { name: 'Badminton', value: 35, color: 'hsl(250, 50%, 45%)' },
+  { name: 'Football', value: 25, color: 'hsl(250, 50%, 55%)' },
+  { name: 'Cricket', value: 20, color: 'hsl(250, 50%, 65%)' },
+  { name: 'Tennis', value: 12, color: 'hsl(250, 50%, 75%)' },
+  { name: 'Others', value: 8, color: 'hsl(250, 50%, 85%)' },
 ];
 
-const recentUsers = [
-  { id: '1', name: 'Rahul Sharma', email: 'rahul@example.com', role: 'user', date: '2 hours ago' },
-  { id: '2', name: 'Priya Patel', email: 'priya@example.com', role: 'owner', date: '5 hours ago' },
-  { id: '3', name: 'Amit Kumar', email: 'amit@example.com', role: 'user', date: '1 day ago' },
+const usersData = [
+  { id: 'USR001', name: 'Rahul Sharma', email: 'rahul@example.com', role: 'customer', status: 'active', joined: '2025-12-15' },
+  { id: 'USR002', name: 'Priya Patel', email: 'priya@example.com', role: 'customer', status: 'active', joined: '2026-01-02' },
+  { id: 'USR003', name: 'Venue Masters', email: 'venue@masters.com', role: 'owner', status: 'pending', joined: '2026-01-28' },
+  { id: 'USR004', name: 'Sport Zone', email: 'contact@sportzone.in', role: 'owner', status: 'active', joined: '2025-11-10' },
 ];
 
-const recentVenues = [
-  { id: '1', name: 'PowerPlay Arena', owner: 'Sports Corp', sport: 'Badminton', status: 'active' },
-  { id: '2', name: 'Goal Rush Turf', owner: 'Turf Masters', sport: 'Football', status: 'active' },
-  { id: '3', name: 'Smash Zone', owner: 'Play Hub', sport: 'Badminton', status: 'pending' },
+const venuesData = [
+  { id: 'VN001', name: 'PowerPlay Badminton Arena', owner: 'Sport Zone', sport: 'Badminton', status: 'active', bookings: 248 },
+  { id: 'VN002', name: 'Goal Rush Football Turf', owner: 'Venue Masters', sport: 'Football', status: 'pending', bookings: 0 },
+  { id: 'VN003', name: 'Ace Tennis Academy', owner: 'Sport Zone', sport: 'Tennis', status: 'active', bookings: 156 },
+];
+
+const transactionsData = [
+  { id: 'TXN001', booking: 'BK001', user: 'Rahul Sharma', amount: 650, commission: 20, date: '2026-02-03', status: 'success' },
+  { id: 'TXN002', booking: 'BK002', user: 'Priya Patel', amount: 650, commission: 20, date: '2026-02-03', status: 'success' },
+  { id: 'TXN003', booking: 'BK003', user: 'Amit Kumar', amount: 700, commission: 21, date: '2026-02-03', status: 'success' },
+  { id: 'TXN004', booking: 'BK004', user: 'Sneha Gupta', amount: 450, commission: 14, date: '2026-02-04', status: 'pending' },
 ];
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { user, userRole, loading, demoUser } = useAuth();
-  const [stats, setStats] = useState<PlatformStats>({
-    totalUsers: 0,
-    totalOwners: 0,
-    totalVenues: 0,
-    totalBookings: 0,
-    totalRevenue: 0,
-    serviceFee: 5,
-  });
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'venues' | 'bookings' | 'settings' | 'reports'>('overview');
-  const [searchQuery, setSearchQuery] = useState('');
+  const { signOut, demoUser } = useAuth();
+  const [currentView, setCurrentView] = useState<AdminView>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [serviceFee, setServiceFee] = useState('3');
 
-  useEffect(() => {
-    if (!loading && (!user || userRole !== 'admin')) {
-      // Allow demo admin
-      if (!demoUser || demoUser.role !== 'admin') {
-        navigate('/');
-      }
-    }
-  }, [user, userRole, loading, navigate, demoUser]);
+  const handleLogout = async () => { await signOut(); navigate('/auth'); };
 
-  useEffect(() => {
-    if ((user && userRole === 'admin') || (demoUser && demoUser.role === 'admin')) {
-      fetchPlatformStats();
-    }
-  }, [user, userRole, demoUser]);
-
-  const fetchPlatformStats = async () => {
-    // Demo data for demo admin
-    if (demoUser?.role === 'admin') {
-      setStats({
-        totalUsers: 1247,
-        totalOwners: 86,
-        totalVenues: 142,
-        totalBookings: 8456,
-        totalRevenue: 2854000,
-        serviceFee: 5,
-      });
-      return;
-    }
-
-    // Fetch venues count
-    const { count: venuesCount } = await supabase
-      .from('venues')
-      .select('*', { count: 'exact', head: true });
-
-    // Fetch service fee
-    const { data: feeData } = await supabase
-      .from('platform_settings')
-      .select('value')
-      .eq('key', 'service_fee_percent')
-      .maybeSingle();
-
-    setStats(prev => ({
-      ...prev,
-      totalVenues: venuesCount || 0,
-      serviceFee: feeData ? parseFloat(feeData.value) : 5,
-    }));
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse-soft text-primary">Loading...</div>
-      </div>
-    );
-  }
-
-  const statCards = [
-    { 
-      label: 'Total Users', 
-      value: stats.totalUsers.toLocaleString(), 
-      icon: Users, 
-      color: 'bg-primary/10 text-primary',
-      trend: '+15%'
-    },
-    { 
-      label: 'Venue Owners', 
-      value: stats.totalOwners, 
-      icon: UserCheck, 
-      color: 'bg-success/10 text-success',
-      trend: '+8%'
-    },
-    { 
-      label: 'Active Venues', 
-      value: stats.totalVenues, 
-      icon: Building2, 
-      color: 'bg-warning/10 text-warning',
-      trend: '+12%'
-    },
-    { 
-      label: 'Platform Revenue', 
-      value: `₹${(stats.totalRevenue / 100000).toFixed(1)}L`, 
-      icon: IndianRupee, 
-      color: 'bg-secondary/10 text-secondary',
-      trend: '+25%'
-    },
-  ];
-
-  const tabs = [
-    { id: 'overview' as const, label: 'Overview', icon: BarChart3 },
-    { id: 'users' as const, label: 'Users', icon: Users },
-    { id: 'venues' as const, label: 'Venues', icon: Building2 },
-    { id: 'bookings' as const, label: 'Bookings', icon: Calendar },
-    { id: 'reports' as const, label: 'Reports', icon: Download },
-    { id: 'settings' as const, label: 'Settings', icon: Settings },
+  const navItems = [
+    { id: 'dashboard' as AdminView, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'users' as AdminView, label: 'Users', icon: Users },
+    { id: 'venues' as AdminView, label: 'Venues', icon: Building2 },
+    { id: 'transactions' as AdminView, label: 'Transactions', icon: Receipt },
+    { id: 'settings' as AdminView, label: 'Settings', icon: Settings },
   ];
 
   return (
-    <div className="min-h-screen bg-background bg-pattern">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-gradient-secondary text-secondary-foreground shadow-premium-lg">
-        <div className="flex items-center justify-between h-14 px-4">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-11 w-11 rounded-xl text-secondary-foreground hover:bg-white/10"
-              onClick={() => navigate('/')}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-lg font-bold font-display flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Admin Dashboard
-              </h1>
-              <p className="text-xs opacity-80">
-                {demoUser ? 'Demo Mode' : 'Platform Management'}
-              </p>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-background theme-admin">
+      <header className="lg:hidden sticky top-0 z-50 h-14 bg-card border-b border-border flex items-center justify-between px-4">
+        <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 hover:bg-muted rounded-md"><Menu className="h-5 w-5" /></button>
+        <h1 className="font-bold font-display text-primary">Admin Panel</h1>
+        <div className="w-10" />
       </header>
 
-      {/* Tab Navigation */}
-      <div className="px-4 py-3 overflow-x-auto no-scrollbar bg-card border-b border-border">
-        <div className="flex gap-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-                activeTab === tab.id
-                  ? 'bg-secondary text-secondary-foreground shadow-premium-md'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
+      {sidebarOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setSidebarOpen(false)}>
+          <div className="absolute left-0 top-0 bottom-0 w-64 bg-sidebar" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
+              <span className="font-bold text-sidebar-foreground">Admin Panel</span>
+              <button onClick={() => setSidebarOpen(false)} className="p-1 hover:bg-sidebar-accent rounded"><X className="h-5 w-5 text-sidebar-foreground" /></button>
+            </div>
+            <nav className="p-2">
+              {navItems.map((item) => (
+                <button key={item.id} onClick={() => { setCurrentView(item.id); setSidebarOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${currentView === item.id ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}>
+                  <item.icon className="h-5 w-5" />{item.label}
+                </button>
+              ))}
+            </nav>
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-sidebar-border">
+              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent"><LogOut className="h-5 w-5" />Sign Out</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-56 flex-col bg-sidebar border-r border-sidebar-border">
+        <div className="p-4 border-b border-sidebar-border">
+          <h1 className="font-bold text-lg text-sidebar-foreground font-display">Admin Panel</h1>
+          <p className="text-xs text-sidebar-foreground/60 mt-1">{demoUser?.email}</p>
+        </div>
+        <nav className="flex-1 p-2">
+          {navItems.map((item) => (
+            <button key={item.id} onClick={() => setCurrentView(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors mb-1 ${currentView === item.id ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}>
+              <item.icon className="h-5 w-5" />{item.label}
             </button>
           ))}
+        </nav>
+        <div className="p-4 border-t border-sidebar-border">
+          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent text-sm"><LogOut className="h-4 w-4" />Sign Out</button>
         </div>
-      </div>
+      </aside>
 
-      {/* Content */}
-      <main className="p-4 space-y-4">
-        {activeTab === 'overview' && (
-          <>
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {statCards.map((stat, index) => (
-                <div 
-                  key={stat.label} 
-                  className="card-premium p-4 animate-fade-in"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={`h-10 w-10 rounded-xl ${stat.color} flex items-center justify-center`}>
-                      <stat.icon className="h-5 w-5" />
-                    </div>
-                    <span className="text-xs font-medium text-success flex items-center gap-0.5">
-                      <TrendingUp className="h-3 w-3" />
-                      {stat.trend}
-                    </span>
-                  </div>
-                  <p className="text-2xl font-bold font-display">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Revenue Chart */}
-            <div className="card-premium p-4">
-              <h3 className="font-semibold font-display mb-4">Revenue Trend</h3>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={revenueData}>
-                    <defs>
-                      <linearGradient id="colorAdminRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--secondary))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--secondary))" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `₹${v/1000}k`} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        background: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                      formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="revenue" 
-                      stroke="hsl(var(--secondary))" 
-                      fillOpacity={1} 
-                      fill="url(#colorAdminRevenue)" 
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+      <main className="lg:ml-56 min-h-screen">
+        <div className="p-4 lg:p-6 max-w-6xl">
+          {currentView === 'dashboard' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold font-display">Dashboard</h2>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="kpi-card"><div className="flex items-center gap-2 text-muted-foreground mb-2"><CalendarCheck className="h-4 w-4" /><span className="text-xs font-medium">Total Bookings</span></div><p className="text-2xl font-bold">1,247</p><p className="text-xs text-success flex items-center gap-1 mt-1"><TrendingUp className="h-3 w-3" /> +12% this week</p></div>
+                <div className="kpi-card"><div className="flex items-center gap-2 text-muted-foreground mb-2"><DollarSign className="h-4 w-4" /><span className="text-xs font-medium">Platform Revenue</span></div><p className="text-2xl font-bold">₹38,420</p><p className="text-xs text-success flex items-center gap-1 mt-1"><TrendingUp className="h-3 w-3" /> +8% this week</p></div>
+                <div className="kpi-card"><div className="flex items-center gap-2 text-muted-foreground mb-2"><Building2 className="h-4 w-4" /><span className="text-xs font-medium">Active Venues</span></div><p className="text-2xl font-bold">24</p><p className="text-xs text-muted-foreground mt-1">3 pending approval</p></div>
+                <div className="kpi-card"><div className="flex items-center gap-2 text-muted-foreground mb-2"><Users className="h-4 w-4" /><span className="text-xs font-medium">Total Users</span></div><p className="text-2xl font-bold">892</p><p className="text-xs text-success flex items-center gap-1 mt-1"><TrendingUp className="h-3 w-3" /> +24 this week</p></div>
               </div>
-            </div>
-
-            {/* Platform Health */}
-            <div className="card-premium p-4">
-              <h3 className="font-semibold font-display mb-4">Platform Health</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                  <span className="text-sm text-muted-foreground">Service Charge</span>
-                  <span className="font-semibold">{stats.serviceFee}%</span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                  <span className="text-sm text-muted-foreground">Total Bookings</span>
-                  <span className="font-semibold">{stats.totalBookings.toLocaleString()}</span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-xl bg-success/10">
-                  <span className="text-sm text-muted-foreground">API Status</span>
-                  <span className="text-success font-semibold flex items-center gap-1">
-                    <Activity className="h-4 w-4" /> Healthy
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Sport Distribution */}
-            <div className="card-premium p-4">
-              <h3 className="font-semibold font-display mb-4">Venue Distribution</h3>
-              <div className="flex items-center gap-4">
-                <div className="h-32 w-32">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={sportDistribution}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={35}
-                        outerRadius={50}
-                        dataKey="value"
-                      >
-                        {sportDistribution.map((entry, index) => (
-                          <Cell key={index} fill={entry.color} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex-1 space-y-2">
-                  {sportDistribution.map((sport) => (
-                    <div key={sport.name} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full" style={{ background: sport.color }} />
-                        <span className="text-sm">{sport.name}</span>
-                      </div>
-                      <span className="text-sm font-medium">{sport.value}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {activeTab === 'users' && (
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search users..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 input-premium"
-                />
-              </div>
-              <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="card-premium p-4">
-              <h3 className="font-semibold font-display mb-3">Recent Users</h3>
-              <div className="space-y-3">
-                {recentUsers.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        user.role === 'owner' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
-                      }`}>
-                        {user.role}
-                      </span>
-                      <p className="text-xs text-muted-foreground mt-1">{user.date}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'venues' && (
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search venues..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 input-premium"
-                />
-              </div>
-              <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="card-premium p-4">
-              <h3 className="font-semibold font-display mb-3">Venue Management</h3>
-              <div className="space-y-3">
-                {recentVenues.map((venue) => (
-                  <div key={venue.id} className="flex items-center justify-between p-3 rounded-xl border border-border">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Building2 className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{venue.name}</p>
-                        <p className="text-xs text-muted-foreground">{venue.owner} • {venue.sport}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        venue.status === 'active' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
-                      }`}>
-                        {venue.status}
-                      </span>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'bookings' && (
-          <div className="card-premium p-4">
-            <h3 className="font-semibold font-display mb-3">All Bookings</h3>
-            <div className="space-y-3">
-              {[
-                { ref: 'SP260203-ABC123', venue: 'PowerPlay Arena', amount: '₹450', status: 'confirmed' },
-                { ref: 'SP260203-DEF456', venue: 'Goal Rush Turf', amount: '₹1,800', status: 'confirmed' },
-                { ref: 'SP260203-GHI789', venue: 'Smash Zone', amount: '₹350', status: 'cancelled' },
-              ].map((booking, index) => (
-                <div key={index} className="flex items-center justify-between p-3 rounded-xl border border-border">
-                  <div>
-                    <p className="font-mono text-sm font-medium">{booking.ref}</p>
-                    <p className="text-xs text-muted-foreground">{booking.venue}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-primary">{booking.amount}</p>
-                    <span className={`text-xs ${
-                      booking.status === 'confirmed' ? 'text-success' : 'text-destructive'
-                    }`}>
-                      {booking.status}
-                    </span>
+              <div className="grid lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 control-panel">
+                  <h3 className="font-semibold mb-4">Revenue Trend (7 Days)</h3>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={revenueData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                        <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                        <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
+                        <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'reports' && (
-          <div className="space-y-4">
-            <div className="card-premium p-4">
-              <h3 className="font-semibold font-display mb-4">Export Reports</h3>
-              <div className="space-y-3">
-                {[
-                  { name: 'Transaction Report', desc: 'All bookings and payments' },
-                  { name: 'User Report', desc: 'User registrations and activity' },
-                  { name: 'Venue Report', desc: 'Venue performance metrics' },
-                  { name: 'Revenue Report', desc: 'Platform earnings breakdown' },
-                ].map((report) => (
-                  <button 
-                    key={report.name}
-                    className="w-full flex items-center justify-between p-4 rounded-xl border border-border hover:border-primary/30 transition-all"
-                  >
-                    <div>
-                      <p className="font-medium">{report.name}</p>
-                      <p className="text-xs text-muted-foreground">{report.desc}</p>
-                    </div>
-                    <Download className="h-5 w-5 text-primary" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div className="space-y-4">
-            <div className="card-premium p-4">
-              <h3 className="font-semibold font-display mb-4">Platform Settings</h3>
-              
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl border border-border">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <p className="font-medium">Service Charge</p>
-                      <p className="text-sm text-muted-foreground">Platform fee charged on each booking</p>
-                    </div>
-                    <span className="text-2xl font-bold text-primary">{stats.serviceFee}%</span>
+                <div className="control-panel">
+                  <h3 className="font-semibold mb-4">Sport Distribution</h3>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart><Pie data={sportDistribution} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value">{sportDistribution.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip /></PieChart>
+                    </ResponsiveContainer>
                   </div>
-                  <Button variant="outline" className="w-full mt-2 h-11 rounded-xl">
-                    Update Fee
-                  </Button>
-                </div>
-
-                <div className="p-4 rounded-xl border border-border">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Email Notifications</p>
-                      <p className="text-sm text-muted-foreground">Send booking confirmations</p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl border border-border">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Payment Gateway</p>
-                      <p className="text-sm text-muted-foreground">Configure Razorpay settings</p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl border border-warning/30 bg-warning/5">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-warning mt-0.5" />
-                    <div>
-                      <p className="font-medium text-warning">Demo Mode Active</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Some features are limited in demo mode. Connect a real account for full access.
-                      </p>
-                    </div>
+                  <div className="mt-2 grid grid-cols-2 gap-1">
+                    {sportDistribution.map((item) => (<div key={item.name} className="flex items-center gap-2 text-xs"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} /><span className="text-muted-foreground">{item.name}</span><span className="font-medium">{item.value}%</span></div>))}
                   </div>
                 </div>
               </div>
+              <div className="control-panel">
+                <h3 className="font-semibold mb-4">Recent Transactions</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead><tr className="border-b border-border">
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">ID</th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">User</th>
+                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Amount</th>
+                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Commission</th>
+                      <th className="text-center py-2 px-3 font-medium text-muted-foreground">Status</th>
+                    </tr></thead>
+                    <tbody>
+                      {transactionsData.slice(0, 3).map((txn) => (
+                        <tr key={txn.id} className="border-b border-border/50">
+                          <td className="py-2.5 px-3 font-mono text-xs">{txn.id}</td>
+                          <td className="py-2.5 px-3">{txn.user}</td>
+                          <td className="py-2.5 px-3 text-right">₹{txn.amount}</td>
+                          <td className="py-2.5 px-3 text-right text-success">₹{txn.commission}</td>
+                          <td className="py-2.5 px-3 text-center"><span className={`badge-status ${txn.status === 'success' ? 'badge-available' : 'bg-warning/10 text-warning'}`}>{txn.status}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {currentView === 'users' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold font-display">User Management</h2>
+              <div className="control-panel overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="border-b border-border"><th className="text-left py-3 px-3 font-medium text-muted-foreground">ID</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">Name</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">Email</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Role</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Status</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Actions</th></tr></thead>
+                  <tbody>{usersData.map((user) => (<tr key={user.id} className="border-b border-border/50 hover:bg-muted/30"><td className="py-3 px-3 font-mono text-xs">{user.id}</td><td className="py-3 px-3 font-medium">{user.name}</td><td className="py-3 px-3 text-muted-foreground">{user.email}</td><td className="py-3 px-3 text-center"><span className="badge-sport capitalize">{user.role}</span></td><td className="py-3 px-3 text-center"><span className={`badge-status ${user.status === 'active' ? 'badge-available' : 'bg-warning/10 text-warning'}`}>{user.status}</span></td><td className="py-3 px-3 text-center">{user.status === 'pending' ? <Button size="sm" className="h-7 text-xs btn-premium">Approve</Button> : <Button variant="outline" size="sm" className="h-7 text-xs">View</Button>}</td></tr>))}</tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {currentView === 'venues' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold font-display">Venue Management</h2>
+              <div className="control-panel overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="border-b border-border"><th className="text-left py-3 px-3 font-medium text-muted-foreground">ID</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">Venue Name</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">Owner</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Sport</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Bookings</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Status</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Actions</th></tr></thead>
+                  <tbody>{venuesData.map((venue) => (<tr key={venue.id} className="border-b border-border/50 hover:bg-muted/30"><td className="py-3 px-3 font-mono text-xs">{venue.id}</td><td className="py-3 px-3 font-medium">{venue.name}</td><td className="py-3 px-3 text-muted-foreground">{venue.owner}</td><td className="py-3 px-3 text-center"><span className="badge-sport">{venue.sport}</span></td><td className="py-3 px-3 text-center font-medium">{venue.bookings}</td><td className="py-3 px-3 text-center"><span className={`badge-status ${venue.status === 'active' ? 'badge-available' : 'bg-warning/10 text-warning'}`}>{venue.status}</span></td><td className="py-3 px-3 text-center">{venue.status === 'pending' ? <Button size="sm" className="h-7 text-xs btn-premium">Approve</Button> : <Button variant="outline" size="sm" className="h-7 text-xs">View</Button>}</td></tr>))}</tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {currentView === 'transactions' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between"><h2 className="text-xl font-bold font-display">Transactions</h2><Button variant="outline" className="gap-2"><Download className="h-4 w-4" />Export CSV</Button></div>
+              <div className="control-panel overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="border-b border-border"><th className="text-left py-3 px-3 font-medium text-muted-foreground">Transaction ID</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">Booking</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">User</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">Date</th><th className="text-right py-3 px-3 font-medium text-muted-foreground">Amount</th><th className="text-right py-3 px-3 font-medium text-muted-foreground">Commission</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Status</th></tr></thead>
+                  <tbody>{transactionsData.map((txn) => (<tr key={txn.id} className="border-b border-border/50 hover:bg-muted/30"><td className="py-3 px-3 font-mono text-xs">{txn.id}</td><td className="py-3 px-3 font-mono text-xs">{txn.booking}</td><td className="py-3 px-3">{txn.user}</td><td className="py-3 px-3 text-muted-foreground">{txn.date}</td><td className="py-3 px-3 text-right font-medium">₹{txn.amount}</td><td className="py-3 px-3 text-right text-success font-medium">₹{txn.commission}</td><td className="py-3 px-3 text-center"><span className={`badge-status ${txn.status === 'success' ? 'badge-available' : 'bg-warning/10 text-warning'}`}>{txn.status}</span></td></tr>))}</tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {currentView === 'settings' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold font-display">Platform Settings</h2>
+              <div className="control-panel max-w-md">
+                <h3 className="font-semibold mb-4">Service Charge Configuration</h3>
+                <div className="space-y-4">
+                  <div><label className="text-sm font-medium text-muted-foreground">Service Charge (%)</label><p className="text-xs text-muted-foreground mb-2">Applied to all bookings as platform fee</p><input type="number" value={serviceFee} onChange={(e) => setServiceFee(e.target.value)} min="0" max="10" step="0.5" className="w-full h-10 px-3 border border-border rounded-md bg-background" /></div>
+                  <Button className="btn-premium">Update Settings</Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
