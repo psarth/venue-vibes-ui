@@ -127,13 +127,15 @@ const Profile = () => {
 
   const RoleIcon = getRoleIcon();
 
-  if (loading || !user) {
+  if (loading || (!user && !demoUser)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse-soft text-primary">Loading...</div>
       </div>
     );
   }
+
+  const displayEmail = demoUser?.email || user?.email || '';
 
   return (
     <div className="min-h-screen bg-background bg-pattern">
