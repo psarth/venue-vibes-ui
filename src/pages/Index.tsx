@@ -104,8 +104,8 @@ const Index = () => {
         onAvailabilityChange={setSelectedAvailability}
       />
 
-      {/* Venue Listings - 12px gap between cards */}
-      <div className="px-4 py-4 space-y-3">
+      {/* Venue Listings - 16px gap between cards, 16px horizontal padding */}
+      <div className="px-4 py-4 space-y-4">
         {filteredVenues.length > 0 ? (
           filteredVenues.map((venue) => (
             <VenueCard
@@ -116,8 +116,8 @@ const Index = () => {
           ))
         ) : (
           <div className="text-center py-16">
-            <p className="text-lg font-medium text-foreground mb-2">No venues found</p>
-            <p className="text-muted-foreground">
+            <p className="text-lg font-bold text-foreground mb-2">No venues found</p>
+            <p className="text-sm text-muted-foreground">
               Try adjusting your filters to find available venues
             </p>
           </div>
