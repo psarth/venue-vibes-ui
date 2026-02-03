@@ -20,7 +20,6 @@ export const TopBanner = ({ selectedCity, onCityChange }: TopBannerProps) => {
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1461896836934- voices-of-a-distant-star-8a4b4e4b?w=800&q=80'), url('https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80')`,
           backgroundImage: `url('https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80')`,
         }}
       />
