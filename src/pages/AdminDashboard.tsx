@@ -15,7 +15,7 @@ interface PlatformStats {
   totalVenues: number;
   totalBookings: number;
   totalRevenue: number;
-  convenienceFee: number;
+  serviceFee: number;
 }
 
 const AdminDashboard = () => {
