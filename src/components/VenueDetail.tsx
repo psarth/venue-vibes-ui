@@ -1,8 +1,6 @@
-import { useState, useMemo } from 'react';
-import { ArrowLeft, MapPin, Star, Check, X, ChevronLeft, ChevronRight, Wifi, Car, Droplets, Wind, Dumbbell, Coffee, Shield, Clock } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { ArrowLeft, MapPin, Star, Check, X, ChevronLeft, ChevronRight, Wifi, Car, Droplets, Wind, Dumbbell, Coffee, Shield, Clock, Zap, ShowerHead, Utensils, Video, ShoppingBag, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Venue, Slot, generateSlots } from '@/data/venues';
 import { cn } from '@/lib/utils';
 import { format, addDays } from 'date-fns';
@@ -14,42 +12,23 @@ interface VenueDetailProps {
 }
 
 const amenityIcons: Record<string, React.ReactNode> = {
-  'Parking': <Car className="h-4 w-4" />,
-  'Changing Room': <Droplets className="h-4 w-4" />,
-  'AC': <Wind className="h-4 w-4" />,
-  'Drinking Water': <Droplets className="h-4 w-4" />,
-  'Equipment Rental': <Dumbbell className="h-4 w-4" />,
-  'Floodlights': <Clock className="h-4 w-4" />,
-  'Restroom': <Droplets className="h-4 w-4" />,
-  'First Aid': <Shield className="h-4 w-4" />,
-  'Coaching': <Dumbbell className="h-4 w-4" />,
-  'Ball Machine': <Dumbbell className="h-4 w-4" />,
-  'Cafeteria': <Coffee className="h-4 w-4" />,
-  'Pro Shop': <Dumbbell className="h-4 w-4" />,
-  'Scoreboard': <Clock className="h-4 w-4" />,
-  'Video Analysis': <Clock className="h-4 w-4" />,
-  'Equipment': <Dumbbell className="h-4 w-4" />,
-  'Bowling Machine': <Dumbbell className="h-4 w-4" />,
-  'WiFi': <Wifi className="h-4 w-4" />,
-};
-
-// Generate star rating display
-const renderStars = (rating: number) => {
-  const stars = [];
-  const fullStars = Math.floor(rating);
-  
-  for (let i = 0; i < 5; i++) {
-    if (i < fullStars) {
-      stars.push(
-        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-      );
-    } else {
-      stars.push(
-        <Star key={i} className="h-4 w-4 text-muted-foreground/30" />
-      );
-    }
-  }
-  return stars;
+  'Parking': <Car className="h-5 w-5" />,
+  'Changing Room': <ShowerHead className="h-5 w-5" />,
+  'AC': <Wind className="h-5 w-5" />,
+  'Drinking Water': <Droplets className="h-5 w-5" />,
+  'Equipment Rental': <Dumbbell className="h-5 w-5" />,
+  'Floodlights': <Zap className="h-5 w-5" />,
+  'Restroom': <ShowerHead className="h-5 w-5" />,
+  'First Aid': <Shield className="h-5 w-5" />,
+  'Coaching': <Timer className="h-5 w-5" />,
+  'Ball Machine': <Dumbbell className="h-5 w-5" />,
+  'Cafeteria': <Utensils className="h-5 w-5" />,
+  'Pro Shop': <ShoppingBag className="h-5 w-5" />,
+  'Scoreboard': <Timer className="h-5 w-5" />,
+  'Video Analysis': <Video className="h-5 w-5" />,
+  'Equipment': <Dumbbell className="h-5 w-5" />,
+  'Bowling Machine': <Dumbbell className="h-5 w-5" />,
+  'WiFi': <Wifi className="h-5 w-5" />,
 };
 
 export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
