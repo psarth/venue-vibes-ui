@@ -29,8 +29,8 @@ export const PremiumBookingFlow = ({ venue, slot, selectedDate, onBack, onComple
   const [bookingReference, setBookingReference] = useState('');
 
   const basePrice = slot.price;
-  const convenienceFee = Math.round(basePrice * 0.05);
-  const totalPrice = basePrice + convenienceFee;
+  const serviceFee = Math.round(basePrice * 0.05);
+  const totalPrice = basePrice + serviceFee;
 
   const handlePayment = async () => {
     if (!user) {
