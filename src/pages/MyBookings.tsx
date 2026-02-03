@@ -27,22 +27,72 @@ interface Booking {
 
 const MyBookings = () => {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, demoUser } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !demoUser) {
       navigate('/auth');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, demoUser]);
 
   useEffect(() => {
-    if (user) {
+    if (demoUser) {
+      // Set demo bookings
+      setBookings(getDemoBookings());
+      setIsLoading(false);
+    } else if (user) {
       fetchBookings();
     }
-  }, [user]);
+  }, [user, demoUser]);
+
+  const getDemoBookings = (): Booking[] => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const lastWeek = new Date(today);
+    lastWeek.setDate(lastWeek.getDate() - 7);
+
+    return [
+      {
+        id: '1',
+        booking_reference: 'SP260203-ABC123',
+        booking_date: tomorrow.toISOString().split('T')[0],
+        base_price: 450,
+        total_price: 473,
+        status: 'confirmed',
+        created_at: today.toISOString(),
+        venues: { name: 'PowerPlay Badminton Arena', location: 'Indiranagar, Bangalore', sport: 'Badminton' },
+        slots: { start_time: '18:00', end_time: '19:00' },
+      },
+      {
+        id: '2',
+        booking_reference: 'SP260210-DEF456',
+        booking_date: nextWeek.toISOString().split('T')[0],
+        base_price: 1800,
+        total_price: 1890,
+        status: 'confirmed',
+        created_at: today.toISOString(),
+        venues: { name: 'Goal Rush Football Turf', location: 'Koramangala, Bangalore', sport: 'Football' },
+        slots: { start_time: '19:00', end_time: '20:00' },
+      },
+      {
+        id: '3',
+        booking_reference: 'SP260127-GHI789',
+        booking_date: lastWeek.toISOString().split('T')[0],
+        base_price: 350,
+        total_price: 368,
+        status: 'completed',
+        created_at: lastWeek.toISOString(),
+        venues: { name: 'Smash Zone Badminton Hub', location: 'HSR Layout, Bangalore', sport: 'Badminton' },
+        slots: { start_time: '10:00', end_time: '11:00' },
+      },
+    ];
+  };
 
   const fetchBookings = async () => {
     if (!user) return;
@@ -82,7 +132,7 @@ const MyBookings = () => {
 
   const today = new Date().toISOString().split('T')[0];
   const upcomingBookings = bookings.filter(b => b.booking_date >= today && b.status !== 'cancelled');
-  const pastBookings = bookings.filter(b => b.booking_date < today || b.status === 'cancelled');
+  const pastBookings = bookings.filter(b => b.booking_date < today || b.status === 'cancelled' || b.status === 'completed');
 
   const displayedBookings = activeTab === 'upcoming' ? upcomingBookings : pastBookings;
 

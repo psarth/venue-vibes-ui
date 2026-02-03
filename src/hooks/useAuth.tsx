@@ -4,14 +4,23 @@ import { supabase } from '@/integrations/supabase/client';
 
 type UserRole = 'user' | 'owner' | 'admin';
 
+interface DemoUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  name: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: UserRole | null;
   loading: boolean;
+  demoUser: DemoUser | null;
   signUp: (email: string, password: string, fullName: string, role: UserRole) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  setDemoUser: (user: DemoUser | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,8 +30,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [demoUser, setDemoUserState] = useState<DemoUser | null>(() => {
+    // Restore demo user from localStorage
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('demoUser');
+      return stored ? JSON.parse(stored) : null;
+    }
+    return null;
+  });
+
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (!error && data) {
+        setUserRole(data.role as UserRole);
+      }
+    } catch (err) {
+      console.error('Error fetching user role:', err);
+    }
+  };
 
   useEffect(() => {
+    // If demo user is set, use that role
+    if (demoUser) {
+      setUserRole(demoUser.role);
+      setLoading(false);
+      return;
+    }
+
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -52,21 +92,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [demoUser]);
 
-  const fetchUserRole = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (!error && data) {
-        setUserRole(data.role as UserRole);
-      }
-    } catch (err) {
-      console.error('Error fetching user role:', err);
+  const setDemoUser = (user: DemoUser | null) => {
+    setDemoUserState(user);
+    if (user) {
+      localStorage.setItem('demoUser', JSON.stringify(user));
+      setUserRole(user.role);
+    } else {
+      localStorage.removeItem('demoUser');
+      setUserRole(null);
     }
   };
 
@@ -98,14 +133,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    // Clear demo user first
+    setDemoUser(null);
+    
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
     setUserRole(null);
   };
 
+  // Combined user check - either real user or demo user
+  const effectiveUser = demoUser 
+    ? { id: demoUser.id, email: demoUser.email } as User 
+    : user;
+
   return (
-    <AuthContext.Provider value={{ user, session, userRole, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ 
+      user: effectiveUser, 
+      session, 
+      userRole, 
+      loading, 
+      demoUser,
+      signUp, 
+      signIn, 
+      signOut,
+      setDemoUser 
+    }}>
       {children}
     </AuthContext.Provider>
   );

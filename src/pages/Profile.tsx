@@ -16,7 +16,7 @@ interface Profile {
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, userRole, signOut, loading } = useAuth();
+  const { user, userRole, signOut, loading, demoUser } = useAuth();
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -24,16 +24,27 @@ const Profile = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !demoUser) {
       navigate('/auth');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, demoUser]);
 
   useEffect(() => {
-    if (user) {
+    if (demoUser) {
+      // Set demo profile data
+      setProfile({
+        full_name: demoUser.name,
+        phone: demoUser.role === 'admin' ? '+91 9876543210' : '+91 ' + (demoUser.role === 'owner' ? '9999999992' : '9999999991'),
+        avatar_url: null,
+      });
+      setEditData({
+        full_name: demoUser.name,
+        phone: demoUser.role === 'admin' ? '+91 9876543210' : '+91 ' + (demoUser.role === 'owner' ? '9999999992' : '9999999991'),
+      });
+    } else if (user) {
       fetchProfile();
     }
-  }, [user]);
+  }, [user, demoUser]);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -54,6 +65,16 @@ const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
+    // Demo mode - just show success
+    if (demoUser) {
+      toast({
+        title: 'Demo Mode',
+        description: 'Profile updates are simulated in demo mode.',
+      });
+      setIsEditing(false);
+      return;
+    }
+
     if (!user) return;
     setIsSaving(true);
 
@@ -106,13 +127,15 @@ const Profile = () => {
 
   const RoleIcon = getRoleIcon();
 
-  if (loading || !user) {
+  if (loading || (!user && !demoUser)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse-soft text-primary">Loading...</div>
       </div>
     );
   }
+
+  const displayEmail = demoUser?.email || user?.email || '';
 
   return (
     <div className="min-h-screen bg-background bg-pattern">
@@ -158,7 +181,7 @@ const Profile = () => {
               <h2 className="text-xl font-bold font-display">
                 {profile?.full_name || 'User'}
               </h2>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
+              <p className="text-sm text-muted-foreground">{displayEmail}</p>
               <div className="flex items-center gap-2 mt-2">
                 <span className="badge-premium">
                   <RoleIcon className="h-3 w-3 mr-1" />
