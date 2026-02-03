@@ -284,10 +284,10 @@ const AdminDashboard = () => {
                 <div className="p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="font-medium">Convenience Fee</p>
+                      <p className="font-medium">Service Charge</p>
                       <p className="text-sm text-muted-foreground">Platform fee charged on each booking</p>
                     </div>
-                    <span className="text-2xl font-bold text-primary">{stats.convenienceFee}%</span>
+                    <span className="text-2xl font-bold text-primary">{stats.serviceFee}%</span>
                   </div>
                   <Button variant="outline" className="w-full mt-2 h-11 rounded-xl">
                     Update Fee
