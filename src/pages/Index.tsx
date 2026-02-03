@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Navbar } from '@/components/Navbar';
-import { TopBanner } from '@/components/TopBanner';
-import { FilterBar } from '@/components/FilterBar';
-import { VenueCard } from '@/components/VenueCard';
-import { VenueDetail } from '@/components/VenueDetail';
-import { BookingFlow } from '@/components/BookingFlow';
+import { 
+  PremiumNavbar, 
+  PremiumBanner, 
+  PremiumFilterBar, 
+  PremiumVenueCard,
+  PremiumVenueDetail,
+  PremiumBookingFlow
+} from '@/components/premium';
 import { venues, Venue, Slot } from '@/data/venues';
 
 type View = 'home' | 'detail' | 'booking';
@@ -61,7 +63,7 @@ const Index = () => {
   // Booking Flow View
   if (currentView === 'booking' && selectedVenue && selectedSlot) {
     return (
-      <BookingFlow
+      <PremiumBookingFlow
         venue={selectedVenue}
         slot={selectedSlot}
         selectedDate={selectedDate}
@@ -74,7 +76,7 @@ const Index = () => {
   // Venue Detail View
   if (currentView === 'detail' && selectedVenue) {
     return (
-      <VenueDetail 
+      <PremiumVenueDetail 
         venue={selectedVenue} 
         onBack={handleBackToHome}
         onBook={handleBook}
@@ -84,18 +86,18 @@ const Index = () => {
 
   // Home View
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background bg-pattern">
       {/* Sticky Navigation */}
-      <Navbar />
+      <PremiumNavbar />
 
       {/* Top Banner */}
-      <TopBanner 
+      <PremiumBanner 
         selectedCity={selectedCity} 
         onCityChange={setSelectedCity} 
       />
 
       {/* Filter Bar - Sticky below nav */}
-      <FilterBar
+      <PremiumFilterBar
         selectedSport={selectedSport}
         selectedPrice={selectedPrice}
         selectedAvailability={selectedAvailability}
@@ -104,19 +106,28 @@ const Index = () => {
         onAvailabilityChange={setSelectedAvailability}
       />
 
-      {/* Venue Listings - 16px gap between cards, 16px horizontal padding */}
+      {/* Venue Listings */}
       <div className="px-4 py-4 space-y-4">
         {filteredVenues.length > 0 ? (
-          filteredVenues.map((venue) => (
-            <VenueCard
+          filteredVenues.map((venue, index) => (
+            <div 
               key={venue.id}
-              venue={venue}
-              onClick={() => handleVenueClick(venue)}
-            />
+              style={{ animationDelay: `${index * 0.05}s` }}
+            >
+              <PremiumVenueCard
+                venue={venue}
+                onClick={() => handleVenueClick(venue)}
+              />
+            </div>
           ))
         ) : (
-          <div className="text-center py-16">
-            <p className="text-lg font-bold text-foreground mb-2">No venues found</p>
+          <div className="card-premium p-8 text-center animate-fade-in">
+            <div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+              <svg className="h-8 w-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <p className="text-lg font-bold font-display text-foreground mb-2">No venues found</p>
             <p className="text-sm text-muted-foreground">
               Try adjusting your filters to find available venues
             </p>
