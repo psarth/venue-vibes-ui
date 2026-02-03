@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react';
-import { ArrowLeft, MapPin, Star, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, MapPin, Star, Check, X, ChevronLeft, ChevronRight, Wifi, Car, Droplets, Wind, Dumbbell, Coffee, Shield, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Venue, Slot, generateSlots } from '@/data/venues';
 import { cn } from '@/lib/utils';
 import { format, addDays } from 'date-fns';
@@ -11,31 +10,53 @@ import { format, addDays } from 'date-fns';
 interface VenueDetailProps {
   venue: Venue;
   onBack: () => void;
+  onBook: (slot: Slot) => void;
 }
 
-const amenityIcons: Record<string, string> = {
-  'Parking': '🅿️',
-  'Changing Room': '🚿',
-  'AC': '❄️',
-  'Drinking Water': '💧',
-  'Equipment Rental': '🏸',
-  'Floodlights': '💡',
-  'Restroom': '🚻',
-  'First Aid': '🩹',
-  'Coaching': '👨‍🏫',
-  'Ball Machine': '⚾',
-  'Cafeteria': '☕',
-  'Pro Shop': '🛒',
-  'Scoreboard': '📊',
-  'Video Analysis': '📹',
-  'Equipment': '🎾',
-  'Bowling Machine': '🎳',
+const amenityIcons: Record<string, React.ReactNode> = {
+  'Parking': <Car className="h-4 w-4" />,
+  'Changing Room': <Droplets className="h-4 w-4" />,
+  'AC': <Wind className="h-4 w-4" />,
+  'Drinking Water': <Droplets className="h-4 w-4" />,
+  'Equipment Rental': <Dumbbell className="h-4 w-4" />,
+  'Floodlights': <Clock className="h-4 w-4" />,
+  'Restroom': <Droplets className="h-4 w-4" />,
+  'First Aid': <Shield className="h-4 w-4" />,
+  'Coaching': <Dumbbell className="h-4 w-4" />,
+  'Ball Machine': <Dumbbell className="h-4 w-4" />,
+  'Cafeteria': <Coffee className="h-4 w-4" />,
+  'Pro Shop': <Dumbbell className="h-4 w-4" />,
+  'Scoreboard': <Clock className="h-4 w-4" />,
+  'Video Analysis': <Clock className="h-4 w-4" />,
+  'Equipment': <Dumbbell className="h-4 w-4" />,
+  'Bowling Machine': <Dumbbell className="h-4 w-4" />,
+  'WiFi': <Wifi className="h-4 w-4" />,
 };
 
-export const VenueDetail = ({ venue, onBack }: VenueDetailProps) => {
+// Generate star rating display
+const renderStars = (rating: number) => {
+  const stars = [];
+  const fullStars = Math.floor(rating);
+  
+  for (let i = 0; i < 5; i++) {
+    if (i < fullStars) {
+      stars.push(
+        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+      );
+    } else {
+      stars.push(
+        <Star key={i} className="h-4 w-4 text-muted-foreground/30" />
+      );
+    }
+  }
+  return stars;
+};
+
+export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState<'details' | 'slots'>('details');
 
   // Generate next 7 days
   const dates = useMemo(() => {
@@ -58,135 +79,169 @@ export const VenueDetail = ({ venue, onBack }: VenueDetailProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-28">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-card border-b border-border">
         <div className="flex items-center gap-3 px-4 py-3">
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9"
+            className="h-10 w-10"
             onClick={onBack}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1 min-w-0">
-            <h1 className="font-semibold text-foreground truncate">{venue.name}</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 shrink-0" />
+            <h1 className="font-bold text-lg text-foreground truncate">{venue.name}</h1>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
               <span className="truncate">{venue.location}</span>
             </div>
-          </div>
-          <div className="flex items-center gap-1 bg-accent px-2 py-1 rounded-full">
-            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs font-medium">{venue.rating}</span>
-            <span className="text-xs text-muted-foreground">({venue.reviewCount})</span>
           </div>
         </div>
       </div>
 
-      {/* Content with Tabs for Mobile */}
-      <Tabs defaultValue="details" className="w-full">
-        <TabsList className="w-full h-auto p-1 bg-muted rounded-none grid grid-cols-2">
-          <TabsTrigger 
-            value="details" 
-            className="py-2.5 text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-primary"
-          >
-            Venue Details
-          </TabsTrigger>
-          <TabsTrigger 
-            value="booking" 
-            className="py-2.5 text-sm font-medium data-[state=active]:bg-card data-[state=active]:text-primary"
-          >
-            Slots & Booking
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Venue Details Tab */}
-        <TabsContent value="details" className="mt-0 focus-visible:ring-0">
-          {/* Image Gallery */}
-          <div className="relative aspect-[16/10] bg-muted">
-            <img
-              src={venue.gallery[currentImageIndex]}
-              alt={`${venue.name} - Image ${currentImageIndex + 1}`}
-              className="w-full h-full object-cover"
-            />
-            {venue.gallery.length > 1 && (
-              <>
+      {/* Image Carousel */}
+      <div className="relative h-56 bg-muted">
+        <img
+          src={venue.gallery[currentImageIndex]}
+          alt={`${venue.name} - Image ${currentImageIndex + 1}`}
+          className="w-full h-full object-cover"
+        />
+        {venue.gallery.length > 1 && (
+          <>
+            <button
+              onClick={prevImage}
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors shadow-md"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              onClick={nextImage}
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors shadow-md"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+              {venue.gallery.map((_, index) => (
                 <button
-                  onClick={prevImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                  {venue.gallery.map((_, index) => (
-                    <div
-                      key={index}
-                      className={cn(
-                        "h-1.5 w-1.5 rounded-full transition-colors",
-                        index === currentImageIndex ? "bg-primary-foreground" : "bg-primary-foreground/50"
-                      )}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+                  key={index}
+                  onClick={() => setCurrentImageIndex(index)}
+                  className={cn(
+                    "h-2 w-2 rounded-full transition-colors",
+                    index === currentImageIndex ? "bg-primary-foreground w-4" : "bg-primary-foreground/50"
+                  )}
+                />
+              ))}
+            </div>
+          </>
+        )}
+        
+        {/* Rating Badge */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-card/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
+          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+          <span className="text-sm font-bold text-foreground">{venue.rating}</span>
+          <span className="text-xs text-muted-foreground">({venue.reviewCount})</span>
+        </div>
+      </div>
 
+      {/* Tab Buttons - Equal width */}
+      <div className="flex border-b border-border bg-card">
+        <button
+          onClick={() => setActiveTab('details')}
+          className={cn(
+            "flex-1 py-3.5 text-base font-semibold transition-colors relative",
+            activeTab === 'details' 
+              ? "text-primary" 
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          Details
+          {activeTab === 'details' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('slots')}
+          className={cn(
+            "flex-1 py-3.5 text-base font-semibold transition-colors relative",
+            activeTab === 'slots' 
+              ? "text-primary" 
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          Slots
+          {activeTab === 'slots' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+          )}
+        </button>
+      </div>
+
+      {/* Details Tab Content */}
+      {activeTab === 'details' && (
+        <div>
           {/* Description */}
-          <div className="px-4 py-4 border-b border-border">
-            <h2 className="font-semibold text-foreground mb-2">About</h2>
+          <div className="px-4 py-4 border-b border-border bg-card">
+            <h2 className="font-bold text-lg text-foreground mb-3">About this venue</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {venue.description}
             </p>
+            <p className="text-sm text-muted-foreground leading-relaxed mt-3">
+              Whether you're a beginner looking to learn the basics or a seasoned player wanting to practice your skills, this venue offers the perfect environment. The well-maintained facilities and professional setup ensure a great experience every time you visit.
+            </p>
           </div>
 
-          {/* Amenities */}
-          <div className="px-4 py-4 border-b border-border">
-            <h2 className="font-semibold text-foreground mb-3">Amenities</h2>
-            <div className="flex flex-wrap gap-2">
+          {/* Amenities with icons */}
+          <div className="px-4 py-4 border-b border-border bg-card">
+            <h2 className="font-bold text-lg text-foreground mb-4">Amenities</h2>
+            <div className="grid grid-cols-2 gap-3">
               {venue.amenities.map((amenity) => (
-                <Badge 
+                <div 
                   key={amenity} 
-                  variant="outline"
-                  className="bg-accent/50 border-border text-foreground py-1.5 px-3"
+                  className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg"
                 >
-                  <span className="mr-1.5">{amenityIcons[amenity] || '✓'}</span>
-                  {amenity}
-                </Badge>
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    {amenityIcons[amenity] || <Check className="h-4 w-4" />}
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{amenity}</span>
+                </div>
               ))}
             </div>
           </div>
 
           {/* Rules */}
-          <div className="px-4 py-4">
-            <h2 className="font-semibold text-foreground mb-3">Rules</h2>
-            <ul className="space-y-2">
+          <div className="px-4 py-4 bg-card">
+            <h2 className="font-bold text-lg text-foreground mb-4">Venue Rules</h2>
+            <ul className="space-y-3">
               {venue.rules.map((rule, index) => (
-                <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <span className="text-primary mt-0.5">•</span>
-                  {rule}
+                <li key={index} className="flex items-start gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-primary">{index + 1}</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">{rule}</span>
                 </li>
               ))}
+              <li className="flex items-start gap-3">
+                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-xs font-bold text-primary">{venue.rules.length + 1}</span>
+                </div>
+                <span className="text-sm text-muted-foreground">Please arrive 10 minutes before your slot time</span>
+              </li>
             </ul>
           </div>
-        </TabsContent>
+        </div>
+      )}
 
-        {/* Slots & Booking Tab */}
-        <TabsContent value="booking" className="mt-0 focus-visible:ring-0">
-          {/* Date Selector */}
-          <div className="px-4 py-4 border-b border-border">
-            <h2 className="font-semibold text-foreground mb-3">Select Date</h2>
+      {/* Slots Tab Content */}
+      {activeTab === 'slots' && (
+        <div>
+          {/* Date Selector - Horizontal scroll */}
+          <div className="px-4 py-4 border-b border-border bg-card">
+            <h2 className="font-bold text-lg text-foreground mb-3">Select Date</h2>
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
               {dates.map((date) => {
                 const isSelected = format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+                const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
                 return (
                   <button
                     key={date.toISOString()}
@@ -195,15 +250,23 @@ export const VenueDetail = ({ venue, onBack }: VenueDetailProps) => {
                       setSelectedSlot(null);
                     }}
                     className={cn(
-                      "flex flex-col items-center min-w-[60px] py-2 px-3 rounded-lg border transition-colors",
+                      "flex flex-col items-center min-w-[64px] py-2.5 px-3 rounded-xl border-2 transition-all",
                       isSelected
-                        ? "bg-primary text-primary-foreground border-primary"
+                        ? "bg-primary text-primary-foreground border-primary shadow-md"
                         : "bg-card border-border hover:border-primary/50"
                     )}
                   >
-                    <span className="text-xs font-medium">{format(date, 'EEE')}</span>
-                    <span className="text-lg font-bold">{format(date, 'd')}</span>
-                    <span className="text-xs">{format(date, 'MMM')}</span>
+                    <span className={cn(
+                      "text-xs font-medium",
+                      isSelected ? "text-primary-foreground" : "text-muted-foreground"
+                    )}>
+                      {isToday ? 'Today' : format(date, 'EEE')}
+                    </span>
+                    <span className="text-xl font-bold">{format(date, 'd')}</span>
+                    <span className={cn(
+                      "text-xs",
+                      isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
+                    )}>{format(date, 'MMM')}</span>
                   </button>
                 );
               })}
@@ -211,67 +274,69 @@ export const VenueDetail = ({ venue, onBack }: VenueDetailProps) => {
           </div>
 
           {/* Slot List */}
-          <div className="px-4 py-4">
-            <h2 className="font-semibold text-foreground mb-3">Available Slots</h2>
-            <div className="space-y-2">
+          <div className="px-4 py-4 bg-card">
+            <h2 className="font-bold text-lg text-foreground mb-3">Available Slots</h2>
+            <div className="space-y-3">
               {slots.map((slot) => (
-                <Card
+                <div
                   key={slot.id}
                   onClick={() => slot.available && setSelectedSlot(slot)}
                   className={cn(
-                    "p-3 border cursor-pointer transition-all",
-                    !slot.available && "opacity-50 cursor-not-allowed bg-muted",
-                    slot.available && "hover:border-primary/50",
-                    selectedSlot?.id === slot.id && "border-primary bg-primary/5 ring-1 ring-primary"
+                    "flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer",
+                    !slot.available && "opacity-50 cursor-not-allowed bg-muted border-muted",
+                    slot.available && selectedSlot?.id !== slot.id && "hover:border-primary/50 bg-card border-border",
+                    selectedSlot?.id === slot.id && "border-primary bg-primary/5 shadow-md"
                   )}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "h-8 w-8 rounded-full flex items-center justify-center",
-                        slot.available ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
-                      )}>
-                        {slot.available ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">{slot.time}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{slot.period}</p>
-                      </div>
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "h-10 w-10 rounded-full flex items-center justify-center",
+                      slot.available ? "bg-green-100 text-green-600" : "bg-red-100 text-red-500"
+                    )}>
+                      {slot.available ? <Check className="h-5 w-5" /> : <X className="h-5 w-5" />}
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-primary">₹{slot.price}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {slot.available ? 'Available' : 'Booked'}
-                      </p>
+                    <div>
+                      <p className="font-semibold text-base text-foreground">{slot.time}</p>
+                      <p className="text-sm text-muted-foreground capitalize">{slot.period} slot</p>
                     </div>
                   </div>
-                </Card>
+                  <div className="text-right">
+                    <p className="font-bold text-lg text-primary">₹{slot.price}</p>
+                    <p className={cn(
+                      "text-xs font-medium",
+                      slot.available ? "text-green-600" : "text-red-500"
+                    )}>
+                      {slot.available ? 'Available' : 'Booked'}
+                    </p>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
 
-      {/* Sticky Booking CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3 z-50">
+      {/* Sticky Bottom Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-4 z-50 shadow-lg">
         <div className="flex items-center justify-between gap-4">
           <div>
             {selectedSlot ? (
               <>
-                <p className="text-sm text-muted-foreground">{selectedSlot.time}</p>
-                <p className="text-xl font-bold text-primary">₹{selectedSlot.price}</p>
+                <p className="text-sm text-muted-foreground">{format(selectedDate, 'EEE, d MMM')} • {selectedSlot.time}</p>
+                <p className="text-2xl font-bold text-primary">₹{selectedSlot.price}</p>
               </>
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">Starting from</p>
-                <p className="text-xl font-bold text-primary">₹{venue.pricePerHour}/hr</p>
+                <p className="text-2xl font-bold text-primary">₹{venue.pricePerHour}/hr</p>
               </>
             )}
           </div>
           <Button 
             size="lg" 
-            className="px-8 font-semibold"
+            className="h-12 px-8 text-base font-semibold"
             disabled={!selectedSlot}
+            onClick={() => selectedSlot && onBook(selectedSlot)}
           >
             {selectedSlot ? 'Book Now' : 'Select a Slot'}
           </Button>
