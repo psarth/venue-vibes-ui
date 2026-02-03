@@ -181,7 +181,7 @@ const Profile = () => {
               <h2 className="text-xl font-bold font-display">
                 {profile?.full_name || 'User'}
               </h2>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
+              <p className="text-sm text-muted-foreground">{displayEmail}</p>
               <div className="flex items-center gap-2 mt-2">
                 <span className="badge-premium">
                   <RoleIcon className="h-3 w-3 mr-1" />
