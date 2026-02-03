@@ -240,11 +240,11 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
 
       {/* Slots Tab Content */}
       {activeTab === 'slots' && (
-        <div>
-          {/* Date Selector - Horizontal scroll */}
-          <div className="px-4 py-4 border-b border-border bg-card">
-            <h2 className="font-bold text-lg text-foreground mb-3">Select Date</h2>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        <div className="divide-y divide-border">
+          {/* Date Selector - Horizontal scroll with proper touch targets */}
+          <div className="px-4 py-4 bg-card">
+            <h2 className="font-bold text-lg text-foreground mb-4">Select Date</h2>
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
               {dates.map((date) => {
                 const isSelected = format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
                 const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
@@ -256,21 +256,21 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
                       setSelectedSlot(null);
                     }}
                     className={cn(
-                      "flex flex-col items-center min-w-[64px] py-2.5 px-3 rounded-xl border-2 transition-all",
+                      "flex flex-col items-center min-w-[72px] py-3 px-4 rounded-xl border-2 transition-all",
                       isSelected
-                        ? "bg-primary text-primary-foreground border-primary shadow-md"
+                        ? "bg-primary text-primary-foreground border-primary shadow-lg"
                         : "bg-card border-border hover:border-primary/50"
                     )}
                   >
                     <span className={cn(
-                      "text-xs font-medium",
-                      isSelected ? "text-primary-foreground" : "text-muted-foreground"
+                      "text-xs font-semibold uppercase tracking-wide",
+                      isSelected ? "text-primary-foreground/90" : "text-muted-foreground"
                     )}>
                       {isToday ? 'Today' : format(date, 'EEE')}
                     </span>
-                    <span className="text-xl font-bold">{format(date, 'd')}</span>
+                    <span className="text-2xl font-bold my-0.5">{format(date, 'd')}</span>
                     <span className={cn(
-                      "text-xs",
+                      "text-xs font-medium",
                       isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
                     )}>{format(date, 'MMM')}</span>
                   </button>
@@ -279,43 +279,51 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
             </div>
           </div>
 
-          {/* Slot List */}
+          {/* Slot List - Vertical with clear status indicators */}
           <div className="px-4 py-4 bg-card">
-            <h2 className="font-bold text-lg text-foreground mb-3">Available Slots</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-lg text-foreground">Available Slots</h2>
+              <span className="text-sm text-muted-foreground">
+                {slots.filter(s => s.available).length} available
+              </span>
+            </div>
             <div className="space-y-3">
               {slots.map((slot) => (
-                <div
+                <button
                   key={slot.id}
                   onClick={() => slot.available && setSelectedSlot(slot)}
+                  disabled={!slot.available}
                   className={cn(
-                    "flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer",
-                    !slot.available && "opacity-50 cursor-not-allowed bg-muted border-muted",
-                    slot.available && selectedSlot?.id !== slot.id && "hover:border-primary/50 bg-card border-border",
-                    selectedSlot?.id === slot.id && "border-primary bg-primary/5 shadow-md"
+                    "w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left",
+                    !slot.available && "opacity-60 cursor-not-allowed bg-muted/50 border-muted",
+                    slot.available && selectedSlot?.id !== slot.id && "hover:border-primary/50 bg-card border-border hover:shadow-md",
+                    selectedSlot?.id === slot.id && "border-primary bg-primary/5 shadow-lg ring-1 ring-primary/20"
                   )}
                 >
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      "h-10 w-10 rounded-full flex items-center justify-center",
-                      slot.available ? "bg-green-100 text-green-600" : "bg-red-100 text-red-500"
+                      "h-11 w-11 rounded-xl flex items-center justify-center shrink-0",
+                      slot.available 
+                        ? "bg-green-100 text-green-600" 
+                        : "bg-muted text-muted-foreground"
                     )}>
                       {slot.available ? <Check className="h-5 w-5" /> : <X className="h-5 w-5" />}
                     </div>
                     <div>
                       <p className="font-semibold text-base text-foreground">{slot.time}</p>
-                      <p className="text-sm text-muted-foreground capitalize">{slot.period} slot</p>
+                      <p className="text-sm text-muted-foreground capitalize">{slot.period} session</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-lg text-primary">₹{slot.price}</p>
                     <p className={cn(
-                      "text-xs font-medium",
-                      slot.available ? "text-green-600" : "text-red-500"
+                      "text-xs font-semibold uppercase tracking-wide",
+                      slot.available ? "text-green-600" : "text-muted-foreground"
                     )}>
                       {slot.available ? 'Available' : 'Booked'}
                     </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
