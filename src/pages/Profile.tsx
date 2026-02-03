@@ -65,6 +65,16 @@ const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
+    // Demo mode - just show success
+    if (demoUser) {
+      toast({
+        title: 'Demo Mode',
+        description: 'Profile updates are simulated in demo mode.',
+      });
+      setIsEditing(false);
+      return;
+    }
+
     if (!user) return;
     setIsSaving(true);
 
