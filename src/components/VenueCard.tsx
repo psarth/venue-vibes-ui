@@ -10,58 +10,90 @@ interface VenueCardProps {
 }
 
 export const VenueCard = ({ venue, onClick }: VenueCardProps) => {
+  // Generate star rating display
+  const renderStars = (rating: number) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(
+          <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+        );
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(
+          <Star key={i} className="h-3.5 w-3.5 fill-yellow-400/50 text-yellow-400" />
+        );
+      } else {
+        stars.push(
+          <Star key={i} className="h-3.5 w-3.5 text-muted-foreground/30" />
+        );
+      }
+    }
+    return stars;
+  };
+
   return (
     <Card 
-      className="overflow-hidden bg-card border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+      className="overflow-hidden bg-card border-0 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
       onClick={onClick}
     >
-      {/* Venue Image */}
-      <div className="relative aspect-[16/10] overflow-hidden">
+      {/* Venue Image - Minimum 160px height */}
+      <div className="relative h-40 min-h-[160px] overflow-hidden">
         <img
           src={venue.image}
           alt={venue.name}
           className="w-full h-full object-cover"
           loading="lazy"
         />
-        <div className="absolute top-3 right-3 flex items-center gap-1 bg-card/95 backdrop-blur-sm px-2 py-1 rounded-full">
-          <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-          <span className="text-xs font-medium text-foreground">{venue.rating}</span>
-        </div>
+        {/* Sport Type Badge - Corner position */}
+        <Badge 
+          className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1"
+        >
+          {venue.sport}
+        </Badge>
       </div>
 
-      {/* Card Content */}
+      {/* Card Content - 16px padding */}
       <div className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-semibold text-foreground line-clamp-1">{venue.name}</h3>
-          <Badge 
-            variant="secondary" 
-            className="shrink-0 text-xs bg-accent text-accent-foreground"
-          >
-            {venue.sport}
-          </Badge>
-        </div>
+        {/* Venue Name */}
+        <h3 className="font-bold text-lg text-foreground mb-1 line-clamp-1">
+          {venue.name}
+        </h3>
 
-        <div className="flex items-center gap-1 text-muted-foreground text-sm mb-3">
-          <MapPin className="h-3.5 w-3.5 shrink-0" />
+        {/* Location with map pin */}
+        <div className="flex items-center gap-1.5 text-muted-foreground text-sm mb-3">
+          <MapPin className="h-4 w-4 shrink-0 text-primary" />
           <span className="line-clamp-1">{venue.location}</span>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-lg font-bold text-primary">₹{venue.pricePerHour}</span>
-            <span className="text-muted-foreground text-sm">/hr</span>
-          </div>
-          <Button 
-            size="sm" 
-            className="h-8 px-4 text-xs font-medium"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClick();
-            }}
-          >
-            View Venue
-          </Button>
+        {/* Price */}
+        <div className="mb-3">
+          <span className="text-muted-foreground text-sm">From </span>
+          <span className="text-xl font-bold text-primary">₹{venue.pricePerHour}</span>
+          <span className="text-muted-foreground text-sm">/hour</span>
         </div>
+
+        {/* Trust Section - Rating stars + review count */}
+        <div className="flex items-center gap-2 mb-4 pb-4 border-b border-border">
+          <div className="flex items-center gap-0.5">
+            {renderStars(venue.rating)}
+          </div>
+          <span className="text-sm font-medium text-foreground">{venue.rating}</span>
+          <span className="text-sm text-muted-foreground">({venue.reviewCount} reviews)</span>
+        </div>
+
+        {/* CTA Button - Minimum 44px height */}
+        <Button 
+          className="w-full h-11 text-base font-semibold"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
+        >
+          View Venue
+        </Button>
       </div>
     </Card>
   );

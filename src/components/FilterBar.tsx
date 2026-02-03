@@ -26,16 +26,16 @@ export const FilterBar = ({
   onAvailabilityChange,
 }: FilterBarProps) => {
   return (
-    <div className="sticky top-0 z-40 bg-card border-b border-border px-3 py-3">
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+    <div className="sticky top-14 z-40 bg-card border-b border-border px-4 py-3">
+      <div className="flex gap-2">
         {/* Sport Type Filter */}
         <Select value={selectedSport} onValueChange={onSportChange}>
-          <SelectTrigger className="h-9 min-w-[120px] bg-background border-border text-sm">
-            <SelectValue placeholder="Sport" />
+          <SelectTrigger className="h-10 flex-1 bg-background border-border text-sm font-medium">
+            <SelectValue placeholder="Sport Type" />
           </SelectTrigger>
           <SelectContent className="bg-card border-border z-50">
             {sports.map((sport) => (
-              <SelectItem key={sport} value={sport}>
+              <SelectItem key={sport} value={sport} className="text-sm">
                 {sport}
               </SelectItem>
             ))}
@@ -44,26 +44,26 @@ export const FilterBar = ({
 
         {/* Price Filter */}
         <Select value={selectedPrice} onValueChange={onPriceChange}>
-          <SelectTrigger className="h-9 min-w-[140px] bg-background border-border text-sm">
+          <SelectTrigger className="h-10 flex-1 bg-background border-border text-sm font-medium">
             <SelectValue placeholder="Price" />
           </SelectTrigger>
           <SelectContent className="bg-card border-border z-50">
-            <SelectItem value="default">Default</SelectItem>
-            <SelectItem value="low-high">Price: Low to High</SelectItem>
-            <SelectItem value="high-low">Price: High to Low</SelectItem>
+            <SelectItem value="default" className="text-sm">Default</SelectItem>
+            <SelectItem value="low-high" className="text-sm">Low to High</SelectItem>
+            <SelectItem value="high-low" className="text-sm">High to Low</SelectItem>
           </SelectContent>
         </Select>
 
         {/* Availability Filter */}
         <Select value={selectedAvailability} onValueChange={onAvailabilityChange}>
-          <SelectTrigger className="h-9 min-w-[130px] bg-background border-border text-sm">
+          <SelectTrigger className="h-10 flex-1 bg-background border-border text-sm font-medium">
             <SelectValue placeholder="Availability" />
           </SelectTrigger>
           <SelectContent className="bg-card border-border z-50">
-            <SelectItem value="available">Available now</SelectItem>
-            <SelectItem value="morning">Morning</SelectItem>
-            <SelectItem value="evening">Evening</SelectItem>
-            <SelectItem value="full-day">Full day</SelectItem>
+            <SelectItem value="available" className="text-sm">Available now</SelectItem>
+            <SelectItem value="morning" className="text-sm">Morning (6AM-12PM)</SelectItem>
+            <SelectItem value="afternoon" className="text-sm">Afternoon (12PM-5PM)</SelectItem>
+            <SelectItem value="evening" className="text-sm">Evening (5PM-10PM)</SelectItem>
           </SelectContent>
         </Select>
       </div>
