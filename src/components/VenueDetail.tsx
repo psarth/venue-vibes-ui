@@ -36,6 +36,7 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'details' | 'slots'>('details');
+  const [touchStart, setTouchStart] = useState<number | null>(null);
 
   // Generate next 7 days
   const dates = useMemo(() => {
@@ -57,21 +58,37 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
     );
   };
 
+  // Swipe handlers for carousel
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) nextImage();
+      else prevImage();
+    }
+    setTouchStart(null);
+  };
+
   return (
-    <div className="min-h-screen bg-background pb-28">
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-card border-b border-border">
-        <div className="flex items-center gap-3 px-4 py-3">
+    <div className="min-h-screen bg-background pb-32">
+      {/* Header - 56px height for proper touch targets */}
+      <div className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
+        <div className="flex items-center gap-4 px-4 h-14">
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10"
+            className="h-11 w-11 shrink-0"
             onClick={onBack}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-lg text-foreground truncate">{venue.name}</h1>
+            <h1 className="font-bold text-lg text-foreground truncate leading-tight">{venue.name}</h1>
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
               <span className="truncate">{venue.location}</span>
@@ -80,36 +97,46 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
         </div>
       </div>
 
-      {/* Image Carousel */}
-      <div className="relative h-56 bg-muted">
+      {/* Image Carousel - Swipeable with 5+ images */}
+      <div 
+        className="relative h-56 bg-muted"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <img
           src={venue.gallery[currentImageIndex]}
           alt={`${venue.name} - Image ${currentImageIndex + 1}`}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-opacity duration-300"
         />
         {venue.gallery.length > 1 && (
           <>
             <button
               onClick={prevImage}
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors shadow-md"
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-card/95 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors shadow-lg"
+              aria-label="Previous image"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-6 w-6" />
             </button>
             <button
               onClick={nextImage}
-              className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors shadow-md"
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-card/95 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors shadow-lg"
+              aria-label="Next image"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-6 w-6" />
             </button>
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+            {/* Image counter & dots */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-foreground/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
               {venue.gallery.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
                   className={cn(
-                    "h-2 w-2 rounded-full transition-colors",
-                    index === currentImageIndex ? "bg-primary-foreground w-4" : "bg-primary-foreground/50"
+                    "h-2 rounded-full transition-all duration-200",
+                    index === currentImageIndex 
+                      ? "w-4 bg-primary-foreground" 
+                      : "w-2 bg-primary-foreground/50 hover:bg-primary-foreground/70"
                   )}
+                  aria-label={`Go to image ${index + 1}`}
                 />
               ))}
             </div>
@@ -117,19 +144,19 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
         )}
         
         {/* Rating Badge */}
-        <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-card/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md">
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-card/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
           <span className="text-sm font-bold text-foreground">{venue.rating}</span>
-          <span className="text-xs text-muted-foreground">({venue.reviewCount})</span>
+          <span className="text-xs text-muted-foreground">({venue.reviewCount}+)</span>
         </div>
       </div>
 
-      {/* Tab Buttons - Equal width */}
-      <div className="flex border-b border-border bg-card">
+      {/* Tab Buttons - Equal width, 48px height for touch */}
+      <div className="flex border-b-2 border-border bg-card">
         <button
           onClick={() => setActiveTab('details')}
           className={cn(
-            "flex-1 py-3.5 text-base font-semibold transition-colors relative",
+            "flex-1 h-12 text-base font-semibold transition-colors relative",
             activeTab === 'details' 
               ? "text-primary" 
               : "text-muted-foreground hover:text-foreground"
@@ -143,7 +170,7 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
         <button
           onClick={() => setActiveTab('slots')}
           className={cn(
-            "flex-1 py-3.5 text-base font-semibold transition-colors relative",
+            "flex-1 h-12 text-base font-semibold transition-colors relative",
             activeTab === 'slots' 
               ? "text-primary" 
               : "text-muted-foreground hover:text-foreground"
