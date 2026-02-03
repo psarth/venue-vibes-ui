@@ -185,53 +185,53 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
 
       {/* Details Tab Content */}
       {activeTab === 'details' && (
-        <div>
-          {/* Description */}
-          <div className="px-4 py-4 border-b border-border bg-card">
+        <div className="divide-y divide-border">
+          {/* Description - 16px padding */}
+          <div className="px-4 py-4 bg-card">
             <h2 className="font-bold text-lg text-foreground mb-3">About this venue</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {venue.description}
             </p>
-            <p className="text-sm text-muted-foreground leading-relaxed mt-3">
+            <p className="text-sm text-muted-foreground leading-relaxed mt-4">
               Whether you're a beginner looking to learn the basics or a seasoned player wanting to practice your skills, this venue offers the perfect environment. The well-maintained facilities and professional setup ensure a great experience every time you visit.
             </p>
           </div>
 
-          {/* Amenities with icons */}
-          <div className="px-4 py-4 border-b border-border bg-card">
+          {/* Amenities with icons - Grid layout */}
+          <div className="px-4 py-4 bg-card">
             <h2 className="font-bold text-lg text-foreground mb-4">Amenities</h2>
             <div className="grid grid-cols-2 gap-3">
               {venue.amenities.map((amenity) => (
                 <div 
                   key={amenity} 
-                  className="flex items-center gap-3 p-3 bg-accent/50 rounded-lg"
+                  className="flex items-center gap-3 p-3 bg-accent/40 rounded-xl border border-border/50"
                 >
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                    {amenityIcons[amenity] || <Check className="h-4 w-4" />}
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    {amenityIcons[amenity] || <Check className="h-5 w-5" />}
                   </div>
-                  <span className="text-sm font-medium text-foreground">{amenity}</span>
+                  <span className="text-sm font-medium text-foreground leading-tight">{amenity}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Rules */}
+          {/* Rules - Clear numbered list */}
           <div className="px-4 py-4 bg-card">
             <h2 className="font-bold text-lg text-foreground mb-4">Venue Rules</h2>
             <ul className="space-y-3">
               {venue.rules.map((rule, index) => (
                 <li key={index} className="flex items-start gap-3">
-                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <span className="text-xs font-bold text-primary">{index + 1}</span>
                   </div>
-                  <span className="text-sm text-muted-foreground">{rule}</span>
+                  <span className="text-sm text-muted-foreground leading-relaxed pt-1">{rule}</span>
                 </li>
               ))}
               <li className="flex items-start gap-3">
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <span className="text-xs font-bold text-primary">{venue.rules.length + 1}</span>
                 </div>
-                <span className="text-sm text-muted-foreground">Please arrive 10 minutes before your slot time</span>
+                <span className="text-sm text-muted-foreground leading-relaxed pt-1">Please arrive 10 minutes before your slot time</span>
               </li>
             </ul>
           </div>
