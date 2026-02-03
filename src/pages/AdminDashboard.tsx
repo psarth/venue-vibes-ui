@@ -60,7 +60,7 @@ const AdminDashboard = () => {
     setStats(prev => ({
       ...prev,
       totalVenues: venuesCount || 0,
-      convenienceFee: feeData ? parseFloat(feeData.value) : 5,
+      serviceFee: feeData ? parseFloat(feeData.value) : 5,
     }));
   };
 
