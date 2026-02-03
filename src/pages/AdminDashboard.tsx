@@ -27,7 +27,7 @@ const AdminDashboard = () => {
     totalVenues: 0,
     totalBookings: 0,
     totalRevenue: 0,
-    convenienceFee: 5,
+    serviceFee: 5,
   });
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'venues' | 'bookings' | 'settings'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
