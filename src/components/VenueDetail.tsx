@@ -284,7 +284,7 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
                   className={cn(
                     "flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer",
                     !slot.available && "opacity-50 cursor-not-allowed bg-muted border-muted",
-                    slot.available && !selectedSlot?.id === slot.id && "hover:border-primary/50 bg-card border-border",
+                    slot.available && selectedSlot?.id !== slot.id && "hover:border-primary/50 bg-card border-border",
                     selectedSlot?.id === slot.id && "border-primary bg-primary/5 shadow-md"
                   )}
                 >
