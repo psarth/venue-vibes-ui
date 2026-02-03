@@ -2,14 +2,30 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type UserRole = 'user' | 'owner' | 'admin';
+export type UserRole = 'user' | 'owner' | 'admin';
 
-interface DemoUser {
+export interface DemoUser {
   id: string;
   email: string;
   role: UserRole;
   name: string;
 }
+
+// Demo credentials
+const DEMO_USERS: Record<string, { password: string; user: DemoUser }> = {
+  'customer@demo.com': {
+    password: 'demo123',
+    user: { id: 'demo-customer-001', email: 'customer@demo.com', role: 'user', name: 'Demo Customer' },
+  },
+  'owner@demo.com': {
+    password: 'demo123',
+    user: { id: 'demo-owner-001', email: 'owner@demo.com', role: 'owner', name: 'Demo Owner' },
+  },
+  'admin@demo.com': {
+    password: 'demo123',
+    user: { id: 'demo-admin-001', email: 'admin@demo.com', role: 'admin', name: 'Demo Admin' },
+  },
+};
 
 interface AuthContextType {
   user: User | null;
@@ -20,7 +36,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string, role: UserRole) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  setDemoUser: (user: DemoUser | null) => void;
+  demoLogin: (email: string, password: string) => { success: boolean; error?: string; route?: string };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,7 +47,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [demoUser, setDemoUserState] = useState<DemoUser | null>(() => {
-    // Restore demo user from localStorage
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('demoUser');
       return stored ? JSON.parse(stored) : null;
@@ -56,20 +71,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // If demo user is set, use that role
     if (demoUser) {
       setUserRole(demoUser.role);
       setLoading(false);
       return;
     }
 
-    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Defer role fetch
         if (session?.user) {
           setTimeout(() => {
             fetchUserRole(session.user.id);
@@ -80,7 +92,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // Then check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -105,6 +116,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const demoLogin = (email: string, password: string): { success: boolean; error?: string; route?: string } => {
+    const normalizedEmail = email.toLowerCase().trim();
+    const demoAccount = DEMO_USERS[normalizedEmail];
+
+    if (!demoAccount) {
+      return { success: false, error: 'Invalid email address' };
+    }
+
+    if (demoAccount.password !== password) {
+      return { success: false, error: 'Invalid password' };
+    }
+
+    setDemoUser(demoAccount.user);
+    
+    // Determine route
+    const route = demoAccount.user.role === 'admin' ? '/admin' : 
+                  demoAccount.user.role === 'owner' ? '/owner' : '/';
+    
+    return { success: true, route };
+  };
+
   const signUp = async (email: string, password: string, fullName: string, role: UserRole) => {
     const redirectUrl = `${window.location.origin}/`;
     
@@ -113,10 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
-          role: role,
-        },
+        data: { full_name: fullName, role: role },
       },
     });
     
@@ -133,16 +162,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    // Clear demo user first
     setDemoUser(null);
-    
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
     setUserRole(null);
   };
 
-  // Combined user check - either real user or demo user
   const effectiveUser = demoUser 
     ? { id: demoUser.id, email: demoUser.email } as User 
     : user;
@@ -157,7 +183,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signUp, 
       signIn, 
       signOut,
-      setDemoUser 
+      demoLogin,
     }}>
       {children}
     </AuthContext.Provider>
