@@ -330,13 +330,13 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
         </div>
       )}
 
-      {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-4 z-50 shadow-lg">
+      {/* Sticky Bottom Bar - Enhanced with shadow and proper height */}
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-4 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
         <div className="flex items-center justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             {selectedSlot ? (
               <>
-                <p className="text-sm text-muted-foreground">{format(selectedDate, 'EEE, d MMM')} • {selectedSlot.time}</p>
+                <p className="text-sm text-muted-foreground truncate">{format(selectedDate, 'EEE, d MMM')} • {selectedSlot.time}</p>
                 <p className="text-2xl font-bold text-primary">₹{selectedSlot.price}</p>
               </>
             ) : (
@@ -348,7 +348,7 @@ export const VenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
           </div>
           <Button 
             size="lg" 
-            className="h-12 px-8 text-base font-semibold"
+            className="h-12 px-6 text-base font-semibold rounded-xl shrink-0 shadow-md"
             disabled={!selectedSlot}
             onClick={() => selectedSlot && onBook(selectedSlot)}
           >
