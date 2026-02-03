@@ -1,4 +1,3 @@
-import { ChevronDown } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -26,44 +25,44 @@ export const FilterBar = ({
   onAvailabilityChange,
 }: FilterBarProps) => {
   return (
-    <div className="sticky top-14 z-40 bg-card border-b border-border px-4 py-3">
+    <div className="sticky top-14 z-40 bg-card border-b border-border px-4 py-3 shadow-sm">
       <div className="flex gap-2">
-        {/* Sport Type Filter */}
+        {/* Sport Type Filter - 44px height */}
         <Select value={selectedSport} onValueChange={onSportChange}>
-          <SelectTrigger className="h-10 flex-1 bg-background border-border text-sm font-medium">
-            <SelectValue placeholder="Sport Type" />
+          <SelectTrigger className="h-11 flex-1 bg-background border-border text-sm font-medium rounded-lg shadow-sm">
+            <SelectValue placeholder="All Sports" />
           </SelectTrigger>
-          <SelectContent className="bg-card border-border z-50">
+          <SelectContent className="bg-card border-border shadow-lg z-50 max-h-64">
             {sports.map((sport) => (
-              <SelectItem key={sport} value={sport} className="text-sm">
+              <SelectItem key={sport} value={sport} className="h-11 text-sm font-medium">
                 {sport}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Price Filter */}
+        {/* Price Filter - 44px height */}
         <Select value={selectedPrice} onValueChange={onPriceChange}>
-          <SelectTrigger className="h-10 flex-1 bg-background border-border text-sm font-medium">
+          <SelectTrigger className="h-11 flex-1 bg-background border-border text-sm font-medium rounded-lg shadow-sm">
             <SelectValue placeholder="Price" />
           </SelectTrigger>
-          <SelectContent className="bg-card border-border z-50">
-            <SelectItem value="default" className="text-sm">Default</SelectItem>
-            <SelectItem value="low-high" className="text-sm">Low to High</SelectItem>
-            <SelectItem value="high-low" className="text-sm">High to Low</SelectItem>
+          <SelectContent className="bg-card border-border shadow-lg z-50">
+            <SelectItem value="default" className="h-11 text-sm font-medium">Default</SelectItem>
+            <SelectItem value="low-high" className="h-11 text-sm font-medium">Low → High</SelectItem>
+            <SelectItem value="high-low" className="h-11 text-sm font-medium">High → Low</SelectItem>
           </SelectContent>
         </Select>
 
-        {/* Availability Filter */}
+        {/* Availability Filter - 44px height */}
         <Select value={selectedAvailability} onValueChange={onAvailabilityChange}>
-          <SelectTrigger className="h-10 flex-1 bg-background border-border text-sm font-medium">
-            <SelectValue placeholder="Availability" />
+          <SelectTrigger className="h-11 flex-1 bg-background border-border text-sm font-medium rounded-lg shadow-sm">
+            <SelectValue placeholder="Available" />
           </SelectTrigger>
-          <SelectContent className="bg-card border-border z-50">
-            <SelectItem value="available" className="text-sm">Available now</SelectItem>
-            <SelectItem value="morning" className="text-sm">Morning (6AM-12PM)</SelectItem>
-            <SelectItem value="afternoon" className="text-sm">Afternoon (12PM-5PM)</SelectItem>
-            <SelectItem value="evening" className="text-sm">Evening (5PM-10PM)</SelectItem>
+          <SelectContent className="bg-card border-border shadow-lg z-50">
+            <SelectItem value="available" className="h-11 text-sm font-medium">Available now</SelectItem>
+            <SelectItem value="morning" className="h-11 text-sm font-medium">Morning</SelectItem>
+            <SelectItem value="afternoon" className="h-11 text-sm font-medium">Afternoon</SelectItem>
+            <SelectItem value="evening" className="h-11 text-sm font-medium">Evening</SelectItem>
           </SelectContent>
         </Select>
       </div>
