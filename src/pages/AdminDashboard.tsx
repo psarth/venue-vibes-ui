@@ -50,11 +50,11 @@ const AdminDashboard = () => {
       .from('venues')
       .select('*', { count: 'exact', head: true });
 
-    // Fetch convenience fee
+    // Fetch service fee
     const { data: feeData } = await supabase
       .from('platform_settings')
       .select('value')
-      .eq('key', 'convenience_fee_percent')
+      .eq('key', 'service_fee_percent')
       .maybeSingle();
 
     setStats(prev => ({
