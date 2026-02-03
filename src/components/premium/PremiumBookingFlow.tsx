@@ -220,8 +220,8 @@ export const PremiumBookingFlow = ({ venue, slot, selectedDate, onBack, onComple
                   <span className="font-medium">₹{basePrice}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Convenience Fee (5%)</span>
-                  <span className="font-medium">₹{convenienceFee}</span>
+                  <span className="text-muted-foreground">Service Charge (5%)</span>
+                  <span className="font-medium">₹{serviceFee}</span>
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-border">
                   <span className="font-semibold">Total Amount</span>
