@@ -1,324 +1,254 @@
-import { useState, useRef } from 'react';
-import { ArrowLeft, Star, MapPin, Clock, ChevronLeft, ChevronRight, Wifi, Car, Droplets, Dumbbell, Coffee, ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { ArrowLeft, Star, MapPin, Clock, Share2, Bookmark, ChevronRight, Wifi, Car, Droplets, Dumbbell, Coffee, ShieldCheck, Trophy, Zap, Users, Bath, Shirt, Wind, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Venue, Slot, generateSlots } from '@/data/venues';
+import { Venue, Slot } from '@/data/venues';
+import { cn } from "@/lib/utils";
+import { listenForVenueUpdates } from '@/utils/venueSync';
 
 interface VenueDetailProps {
   venue: Venue;
   onBack: () => void;
-  onBook: (slot: Slot) => void;
+  onBook: (sport: string) => void;
 }
 
 const amenityIcons: Record<string, any> = {
   'WiFi': Wifi,
   'Parking': Car,
-  'Changing Room': Droplets,
-  'AC': Droplets,
+  'Changing Room': Shirt,
+  'AC': Wind,
   'Drinking Water': Droplets,
   'Equipment Rental': Dumbbell,
   'Cafeteria': Coffee,
   'First Aid': ShieldCheck,
-  'Coaching': Dumbbell,
-  'Floodlights': Dumbbell,
-  'Pro Shop': Coffee,
+  'Washroom': Bath,
+  'Flood Lights': Zap,
+  'Seating Area': Users,
+  'Restroom': Bath,
+  'CCTV': ShieldCheck,
 };
 
 export const PremiumVenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
+  const [currentVenue, setCurrentVenue] = useState(venue);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
-  const [touchStart, setTouchStart] = useState(0);
-  const galleryRef = useRef<HTMLDivElement>(null);
+  const [selectedSport, setSelectedSport] = useState(currentVenue.sport || 'Badminton');
 
-  const slots = generateSlots(selectedDate);
-
-  const dates = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    return date;
-  });
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const touchEnd = e.changedTouches[0].clientX;
-    const diff = touchStart - touchEnd;
-
-    if (Math.abs(diff) > 50) {
-      if (diff > 0 && currentImageIndex < venue.gallery.length - 1) {
-        setCurrentImageIndex(prev => prev + 1);
-      } else if (diff < 0 && currentImageIndex > 0) {
-        setCurrentImageIndex(prev => prev - 1);
+  // Real-time sync
+  useEffect(() => {
+    const unsub = listenForVenueUpdates((updated) => {
+      if (updated.id === venue.id.split('_')[0]) {
+        setCurrentVenue(prev => ({
+          ...prev,
+          name: updated.name,
+          location: updated.address,
+          description: updated.description,
+          amenities: updated.amenities || [],
+          sports: updated.sports,
+          sportResources: updated.sportResources,
+          image: updated.images[0] || prev.image,
+          gallery: updated.images || prev.gallery
+        }));
       }
-    }
-  };
+    });
+    return unsub;
+  }, [venue.id]);
 
-  const formatDate = (date: Date) => {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return {
-      day: days[date.getDay()],
-      date: date.getDate(),
-      month: months[date.getMonth()],
-      isToday: date.toDateString() === new Date().toDateString(),
-    };
-  };
+  // Scroll to top
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
-  const groupedSlots = {
-    morning: slots.filter(s => s.period === 'morning'),
-    afternoon: slots.filter(s => s.period === 'afternoon'),
-    evening: slots.filter(s => s.period === 'evening'),
-  };
+  // Sports list - use real sports from venue
+  const sports = useMemo(() => {
+    if (currentVenue.sports && currentVenue.sports.length > 0) return currentVenue.sports;
+    return [currentVenue.sport].filter(Boolean);
+  }, [currentVenue.sports, currentVenue.sport]);
 
-  const SERVICE_CHARGE_PERCENT = 3;
-  const serviceCharge = selectedSlot ? Math.round(selectedSlot.price * SERVICE_CHARGE_PERCENT / 100) : 0;
-  const totalPrice = selectedSlot ? selectedSlot.price + serviceCharge : 0;
+  const currentResourceCount = useMemo(() => {
+    return currentVenue.sportResources?.[selectedSport] || 1;
+  }, [currentVenue.sportResources, selectedSport]);
+
+  const getResourceLabel = (sport: string) => {
+    const s = sport.toLowerCase();
+    if (s.includes('cricket') || s.includes('football')) return 'Turfs';
+    if (s.includes('table tennis') || s.includes('snooker')) return 'Tables';
+    if (s.includes('swimming')) return 'Lanes';
+    return 'Courts';
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 h-14 bg-card border-b border-border flex items-center px-4">
-        <button onClick={onBack} className="p-2 -ml-2 hover:bg-muted rounded-md transition-colors">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div className="ml-3 flex-1 min-w-0">
-          <h1 className="font-semibold truncate">{venue.name}</h1>
-          <p className="text-xs text-muted-foreground truncate">{venue.location}</p>
+    <div className="min-h-screen bg-white pb-24 relative">
+      {/* HEADER Section */}
+      <div className="relative h-72 w-full">
+        {/* Background Image with Gradient Overlay */}
+        <div className="absolute inset-0">
+          <img
+            src={currentVenue.image}
+            alt={currentVenue.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-blue-900/90 via-blue-900/40 to-transparent" />
         </div>
-      </header>
 
-      {/* Main Content - Two Column Layout on Desktop */}
-      <div className="lg:flex lg:h-[calc(100vh-3.5rem)]">
-        {/* Left Panel - Venue Details */}
-        <div className="lg:w-1/2 lg:overflow-y-auto lg:border-r lg:border-border">
-          {/* Image Gallery */}
-          <div 
-            ref={galleryRef}
-            className="relative h-56 lg:h-72 overflow-hidden"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
+        {/* Top Bar Navigation */}
+        <div className="absolute top-0 left-0 right-0 p-4 pt-safe-top flex justify-between items-center z-10">
+          <button
+            onClick={onBack}
+            className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/30 transition-all"
           >
-            <img
-              src={venue.gallery[currentImageIndex]}
-              alt={`${venue.name} - Image ${currentImageIndex + 1}`}
-              className="w-full h-full object-cover"
-            />
-            
-            {/* Navigation Arrows */}
-            {currentImageIndex > 0 && (
-              <button
-                onClick={() => setCurrentImageIndex(prev => prev - 1)}
-                className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center shadow-md"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-            )}
-            {currentImageIndex < venue.gallery.length - 1 && (
-              <button
-                onClick={() => setCurrentImageIndex(prev => prev + 1)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center shadow-md"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            )}
-
-            {/* Image Indicators */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
-              {venue.gallery.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentImageIndex(index)}
-                  className={`h-1.5 rounded-full transition-all ${
-                    index === currentImageIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/50'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Venue Info Bar */}
-          <div className="bg-card border-b border-border p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <span className="badge-sport">{venue.sport}</span>
-                <h2 className="text-lg font-bold font-display mt-2">{venue.name}</h2>
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {venue.location}
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="flex items-center gap-1 justify-end">
-                  <Star className="h-4 w-4 fill-warning text-warning" />
-                  <span className="font-semibold">{venue.rating}</span>
-                  <span className="text-xs text-muted-foreground">({venue.reviewCount})</span>
-                </div>
-                <p className="text-lg font-bold text-primary mt-1">₹{venue.pricePerHour}/hr</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Details Section */}
-          <div className="p-4 space-y-4">
-            {/* Description */}
-            <div>
-              <h3 className="font-semibold mb-2">About</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{venue.description}</p>
-            </div>
-
-            {/* Amenities */}
-            <div>
-              <h3 className="font-semibold mb-3">Amenities</h3>
-              <div className="flex flex-wrap gap-2">
-                {venue.amenities.map((amenity) => {
-                  const Icon = amenityIcons[amenity] || Dumbbell;
-                  return (
-                    <div key={amenity} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-sm">
-                      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>{amenity}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Rules */}
-            <div>
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-warning" />
-                Venue Rules
-              </h3>
-              <ul className="space-y-1.5">
-                {venue.rules.map((rule, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <span className="h-1 w-1 rounded-full bg-primary mt-2 flex-shrink-0" />
-                    {rule}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Map Placeholder */}
-            <div>
-              <h3 className="font-semibold mb-3">Location</h3>
-              <div className="h-32 rounded-lg bg-muted flex items-center justify-center text-sm text-muted-foreground">
-                <MapPin className="h-5 w-5 mr-2" />
-                Map (Sample Google Maps API)
-              </div>
-            </div>
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex gap-3">
+            <button className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/30 transition-all">
+              <Share2 className="w-5 h-5" />
+            </button>
+            <button className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/30 transition-all">
+              <Bookmark className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        {/* Right Panel - Slot Selection */}
-        <div className="lg:w-1/2 lg:flex lg:flex-col bg-card lg:bg-background">
-          {/* Date Selector */}
-          <div className="sticky top-14 lg:top-0 z-20 bg-card border-y border-border p-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Clock className="h-4 w-4 text-primary" />
-              Select Date & Time
-            </h3>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-              {dates.map((date) => {
-                const { day, date: dateNum, month, isToday } = formatDate(date);
-                const isSelected = date.toDateString() === selectedDate.toDateString();
-                
-                return (
-                  <button
-                    key={date.toISOString()}
-                    onClick={() => {
-                      setSelectedDate(date);
-                      setSelectedSlot(null);
-                    }}
-                    className={`flex flex-col items-center min-w-[60px] py-2 px-3 rounded-lg transition-all ${
-                      isSelected 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'bg-muted hover:bg-muted/80'
-                    }`}
-                  >
-                    <span className={`text-xs ${isSelected ? '' : 'text-muted-foreground'}`}>
-                      {isToday ? 'Today' : day}
-                    </span>
-                    <span className="text-lg font-bold">{dateNum}</span>
-                    <span className={`text-xs ${isSelected ? '' : 'text-muted-foreground'}`}>{month}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Slots Grid */}
-          <div className="flex-1 p-4 pb-32 lg:overflow-y-auto space-y-6">
-            {Object.entries(groupedSlots).map(([period, periodSlots]) => (
-              <div key={period}>
-                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3 capitalize">
-                  {period} Slots
-                </h4>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {periodSlots.map((slot) => {
-                    const isSelected = selectedSlot?.id === slot.id;
-                    const isPeak = slot.price > 500;
-                    
-                    return (
-                      <button
-                        key={slot.id}
-                        disabled={!slot.available}
-                        onClick={() => setSelectedSlot(slot)}
-                        className={`slot-cell relative ${
-                          !slot.available ? 'booked' : isSelected ? 'selected' : 'available'
-                        } ${isPeak && slot.available ? 'peak' : ''}`}
-                      >
-                        {isPeak && slot.available && (
-                          <span className="absolute -top-1 -right-1 text-[10px] px-1 py-0.5 rounded bg-warning/10 text-warning font-medium">
-                            Peak
-                          </span>
-                        )}
-                        <p className="text-xs font-medium">{slot.time.split(' - ')[0]}</p>
-                        <p className={`text-sm font-bold ${isSelected ? '' : slot.available ? 'text-primary' : ''}`}>
-                          ₹{slot.price}
-                        </p>
-                        {!slot.available && (
-                          <p className="text-[10px]">Booked</p>
-                        )}
-                        {isSelected && (
-                          <CheckCircle2 className="h-3 w-3 absolute bottom-1 right-1" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+        {/* Venue Info Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+          <div className="flex justify-between items-end">
+            <div>
+              <h1 className="text-2xl font-bold mb-2">{currentVenue.name}</h1>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="bg-yellow-400 text-black text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+                  {currentVenue.rating} <Star className="w-3 h-3 fill-black text-black" />
+                </span>
+                <span className="text-sm text-blue-100">({currentVenue.reviewCount} Reviews)</span>
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 shadow-lg lg:left-1/2">
-        {selectedSlot ? (
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-muted-foreground">{formatDate(selectedDate).day}, {formatDate(selectedDate).date} {formatDate(selectedDate).month}</p>
-              <p className="text-sm font-medium">{selectedSlot.time}</p>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                ₹{selectedSlot.price} + ₹{serviceCharge} service charge
-              </div>
+      {/* Content Section */}
+      <div className="px-5 py-6 space-y-8 animate-fade-in-up">
+
+        {/* Location & Timings */}
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center mt-1">
+              <MapPin className="w-4 h-4 text-primary" />
             </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Total</p>
-              <p className="text-xl font-bold text-primary">₹{totalPrice}</p>
+            <div>
+              <h3 className="font-semibold text-gray-900">Location</h3>
+              <p className="text-sm text-gray-500 leading-snug mt-0.5">{currentVenue.location}</p>
+              <p className="text-xs font-medium text-primary mt-1">2.5 km away from you</p>
             </div>
-            <Button 
-              className="h-11 px-6 btn-premium"
-              onClick={() => onBook(selectedSlot)}
-            >
-              Confirm
-            </Button>
           </div>
-        ) : (
-          <p className="text-center text-muted-foreground">Select a slot to continue</p>
+
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center mt-1">
+              <Clock className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Timings</h3>
+              <p className="text-sm text-gray-500 mt-0.5">Open today • 6:00 AM - 11:00 PM</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 p-3 bg-primary/5 rounded-2xl border border-primary/10">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mt-1">
+              <ShieldCheck className="w-4 h-4 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-gray-900">Facility Info</h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                This venue has <span className="font-bold text-primary">{currentResourceCount} {getResourceLabel(selectedSport)}</span> available for booking.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-px bg-gray-100 w-full" />
+
+        {/* Facility Breakdown Section */}
+        {currentVenue.sportResources && Object.keys(currentVenue.sportResources).length > 0 && (
+          <div className="bg-gray-50/80 rounded-3xl p-5 border border-gray-100/50 space-y-4">
+            <div className="flex items-center gap-2 text-gray-900">
+              <Trophy className="w-5 h-5 text-primary" />
+              <h3 className="font-bold text-base leading-none">Facility Breakdown</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {Object.entries(currentVenue.sportResources).map(([sport, count]) => (
+                <div key={sport} className="bg-white px-4 py-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-1">
+                  <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">{sport}</span>
+                  <span className="text-sm font-bold text-primary">{count} {getResourceLabel(sport)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
+
+        <div className="h-px bg-gray-100 w-full" />
+
+        {/* Sports Selection */}
+        <div>
+          <h3 className="font-bold text-gray-900 mb-3 text-lg">Select Sport</h3>
+          <div className="flex flex-wrap gap-3">
+            {sports.map((sport) => (
+              <button
+                key={sport}
+                onClick={() => setSelectedSport(sport)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-medium border transition-all",
+                  selectedSport === sport
+                    ? "bg-primary text-white border-primary shadow-md shadow-blue-200"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                )}
+              >
+                {sport}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="h-px bg-gray-100 w-full" />
+
+        {/* Amenities */}
+        <div>
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="font-bold text-gray-900 text-lg">Amenities</h3>
+            <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-full border border-gray-100">{currentVenue.amenities.length} Available</span>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            {currentVenue.amenities.map((amenity) => {
+              const Icon = amenityIcons[amenity] || Wifi;
+              return (
+                <div
+                  key={amenity}
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white border border-gray-100 shadow-sm hover:border-primary/20 hover:bg-primary/5 transition-all group"
+                >
+                  <Icon className="w-4 h-4 text-gray-500 group-hover:text-primary" />
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-primary">{amenity}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="h-px bg-gray-100 w-full" />
+
+        {/* About */}
+        <div>
+          <h3 className="font-bold text-gray-900 text-lg mb-2">About Venue</h3>
+          <p className="text-sm text-gray-500 leading-relaxed line-clamp-4">{venue.description}</p>
+        </div>
+
+      </div>
+
+      {/* Sticky Footer CTA */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40 pb-safe">
+        <div className="max-w-md mx-auto">
+          <Button
+            onClick={() => onBook(selectedSport)}
+            className="w-full h-12 rounded-xl text-base font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-blue-200 transition-all active:scale-[0.98]"
+          >
+            Book Now
+          </Button>
+        </div>
       </div>
     </div>
   );

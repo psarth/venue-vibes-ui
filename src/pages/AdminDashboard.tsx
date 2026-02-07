@@ -1,236 +1,279 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, Users, Building2, Receipt, Settings, LogOut, Menu, X,
-  TrendingUp, DollarSign, CalendarCheck, Download
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+import { AdminThemeProvider } from '@/contexts/AdminThemeContext';
 import { useAuth } from '@/hooks/useAuth';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
+import AdminLayout from '@/layouts/AdminLayout';
+import { Calendar, DollarSign, Users2, Building2, Loader2, TrendingUp, IndianRupee, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAdminTheme } from '@/contexts/AdminThemeContext';
 
-type AdminView = 'dashboard' | 'users' | 'venues' | 'transactions' | 'settings';
+interface PlatformStats {
+  totalBookings: number;
+  totalRevenue: number;
+  totalCustomers: number;
+  totalVenues: number;
+  platformEarnings: number;
+  growthRate: number;
+}
 
-const revenueData = [
-  { date: 'Jan 28', revenue: 45000 },
-  { date: 'Jan 29', revenue: 52000 },
-  { date: 'Jan 30', revenue: 48000 },
-  { date: 'Jan 31', revenue: 61000 },
-  { date: 'Feb 1', revenue: 55000 },
-  { date: 'Feb 2', revenue: 73000 },
-  { date: 'Feb 3', revenue: 68000 },
-];
-
-const sportDistribution = [
-  { name: 'Badminton', value: 35, color: 'hsl(250, 50%, 45%)' },
-  { name: 'Football', value: 25, color: 'hsl(250, 50%, 55%)' },
-  { name: 'Cricket', value: 20, color: 'hsl(250, 50%, 65%)' },
-  { name: 'Tennis', value: 12, color: 'hsl(250, 50%, 75%)' },
-  { name: 'Others', value: 8, color: 'hsl(250, 50%, 85%)' },
-];
-
-const usersData = [
-  { id: 'USR001', name: 'Rahul Sharma', email: 'rahul@example.com', role: 'customer', status: 'active', joined: '2025-12-15' },
-  { id: 'USR002', name: 'Priya Patel', email: 'priya@example.com', role: 'customer', status: 'active', joined: '2026-01-02' },
-  { id: 'USR003', name: 'Venue Masters', email: 'venue@masters.com', role: 'owner', status: 'pending', joined: '2026-01-28' },
-  { id: 'USR004', name: 'Sport Zone', email: 'contact@sportzone.in', role: 'owner', status: 'active', joined: '2025-11-10' },
-];
-
-const venuesData = [
-  { id: 'VN001', name: 'PowerPlay Badminton Arena', owner: 'Sport Zone', sport: 'Badminton', status: 'active', bookings: 248 },
-  { id: 'VN002', name: 'Goal Rush Football Turf', owner: 'Venue Masters', sport: 'Football', status: 'pending', bookings: 0 },
-  { id: 'VN003', name: 'Ace Tennis Academy', owner: 'Sport Zone', sport: 'Tennis', status: 'active', bookings: 156 },
-];
-
-const transactionsData = [
-  { id: 'TXN001', booking: 'BK001', user: 'Rahul Sharma', amount: 650, commission: 20, date: '2026-02-03', status: 'success' },
-  { id: 'TXN002', booking: 'BK002', user: 'Priya Patel', amount: 650, commission: 20, date: '2026-02-03', status: 'success' },
-  { id: 'TXN003', booking: 'BK003', user: 'Amit Kumar', amount: 700, commission: 21, date: '2026-02-03', status: 'success' },
-  { id: 'TXN004', booking: 'BK004', user: 'Sneha Gupta', amount: 450, commission: 14, date: '2026-02-04', status: 'pending' },
-];
-
-const AdminDashboard = () => {
+const AdminDashboardContent = () => {
   const navigate = useNavigate();
-  const { signOut, demoUser } = useAuth();
-  const [currentView, setCurrentView] = useState<AdminView>('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [serviceFee, setServiceFee] = useState('3');
+  const { userRole } = useAuth();
+  const { colors } = useAdminTheme();
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleLogout = async () => { await signOut(); navigate('/auth'); };
+  if (userRole !== 'admin') {
+    navigate('/auth');
+    return null;
+  }
 
-  const navItems = [
-    { id: 'dashboard' as AdminView, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'users' as AdminView, label: 'Users', icon: Users },
-    { id: 'venues' as AdminView, label: 'Venues', icon: Building2 },
-    { id: 'transactions' as AdminView, label: 'Transactions', icon: Receipt },
-    { id: 'settings' as AdminView, label: 'Settings', icon: Settings },
+  useEffect(() => {
+    const fetchStats = async () => {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setStats({
+        totalBookings: 2847,
+        totalRevenue: 2450000,
+        totalCustomers: 1247,
+        totalVenues: 45,
+        platformEarnings: 294000,
+        growthRate: 23.5
+      });
+      setLoading(false);
+    };
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <AdminLayout title="Platform Dashboard">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center gap-2" style={{ color: colors.text.secondary }}>
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Loading dashboard...
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  const quickActions = [
+    {
+      title: 'Venue Verification',
+      description: 'Approve new venue requests',
+      icon: Shield,
+      path: '/admin/approvals',
+      color: 'red'
+    },
+    {
+      title: 'Venue Management',
+      description: 'Manage venues and owners',
+      icon: Building2,
+      path: '/admin/venues',
+      color: 'blue'
+    },
+    {
+      title: 'Revenue Tracking',
+      description: 'Monitor platform earnings',
+      icon: TrendingUp,
+      path: '/admin/revenue',
+      color: 'green'
+    },
+    {
+      title: 'Analytics Dashboard',
+      description: 'View detailed insights',
+      icon: TrendingUp,
+      path: '/admin/analytics',
+      color: 'purple'
+    },
+    {
+      title: 'Customer Insights',
+      description: 'Understand user behavior',
+      icon: Users2,
+      path: '/admin/customers',
+      color: 'yellow'
+    }
   ];
 
-  return (
-    <div className="min-h-screen bg-background theme-admin">
-      <header className="lg:hidden sticky top-0 z-50 h-14 bg-card border-b border-border flex items-center justify-between px-4">
-        <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 hover:bg-muted rounded-md"><Menu className="h-5 w-5" /></button>
-        <h1 className="font-bold font-display text-primary">Admin Panel</h1>
-        <div className="w-10" />
-      </header>
+  const getActionColor = (color: string) => {
+    switch (color) {
+      case 'blue': return 'from-blue-500/10 to-blue-600/5 border-blue-500/20 hover:border-blue-500/40';
+      case 'green': return 'from-green-500/10 to-green-600/5 border-green-500/20 hover:border-green-500/40';
+      case 'purple': return 'from-purple-500/10 to-purple-600/5 border-purple-500/20 hover:border-purple-500/40';
+      case 'yellow': return 'from-yellow-500/10 to-yellow-600/5 border-yellow-500/20 hover:border-yellow-500/40';
+      case 'red': return 'from-red-500/10 to-red-600/5 border-red-500/20 hover:border-red-500/40';
+      default: return 'from-gray-500/10 to-gray-600/5 border-gray-500/20 hover:border-gray-500/40';
+    }
+  };
 
-      {sidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setSidebarOpen(false)}>
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-sidebar" onClick={e => e.stopPropagation()}>
-            <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
-              <span className="font-bold text-sidebar-foreground">Admin Panel</span>
-              <button onClick={() => setSidebarOpen(false)} className="p-1 hover:bg-sidebar-accent rounded"><X className="h-5 w-5 text-sidebar-foreground" /></button>
+  const getIconColor = (color: string) => {
+    switch (color) {
+      case 'blue': return 'text-blue-400';
+      case 'green': return 'text-green-400';
+      case 'purple': return 'text-purple-400';
+      case 'yellow': return 'text-yellow-400';
+      case 'red': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
+  };
+
+  return (
+    <AdminLayout title="Platform Dashboard">
+      <div className="space-y-4 lg:space-y-6">
+        {/* Welcome Section */}
+        <div className="p-4 lg:p-6 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+          <h2 className="text-xl lg:text-2xl font-bold mb-2" style={{ color: colors.text.primary }}>Welcome to VenueVibes Admin</h2>
+          <p className="text-sm lg:text-base" style={{ color: colors.text.secondary }}>Monitor and manage your sports booking platform with powerful insights and controls.</p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <div className="p-4 lg:p-6 rounded-xl border bg-gradient-to-br from-blue-500/5 to-blue-600/10" style={{ borderColor: colors.accent.border }}>
+            <div className="flex items-center gap-3 mb-3 lg:mb-4">
+              <div className="p-2 lg:p-3 bg-blue-500/10 rounded-lg">
+                <Calendar className="h-5 w-5 lg:h-6 lg:w-6 text-blue-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs lg:text-sm font-medium truncate" style={{ color: colors.text.secondary }}>Total Bookings</p>
+                <p className="text-xl lg:text-2xl font-bold" style={{ color: colors.text.primary }}>
+                  {stats?.totalBookings.toLocaleString()}
+                </p>
+              </div>
             </div>
-            <nav className="p-2">
-              {navItems.map((item) => (
-                <button key={item.id} onClick={() => { setCurrentView(item.id); setSidebarOpen(false); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${currentView === item.id ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}>
-                  <item.icon className="h-5 w-5" />{item.label}
-                </button>
-              ))}
-            </nav>
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-sidebar-border">
-              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent"><LogOut className="h-5 w-5" />Sign Out</button>
+            <div className="flex items-center gap-1 text-xs lg:text-sm">
+              <TrendingUp className="h-3 w-3 lg:h-4 lg:w-4 text-green-400" />
+              <span className="text-green-400 font-medium">+{stats?.growthRate}%</span>
+              <span className="truncate" style={{ color: colors.text.secondary }}>vs last month</span>
+            </div>
+          </div>
+
+          <div className="p-4 lg:p-6 rounded-xl border bg-gradient-to-br from-green-500/5 to-green-600/10" style={{ borderColor: colors.accent.border }}>
+            <div className="flex items-center gap-3 mb-3 lg:mb-4">
+              <div className="p-2 lg:p-3 bg-green-500/10 rounded-lg">
+                <IndianRupee className="h-5 w-5 lg:h-6 lg:w-6 text-green-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs lg:text-sm font-medium truncate" style={{ color: colors.text.secondary }}>Platform Revenue</p>
+                <p className="text-xl lg:text-2xl font-bold" style={{ color: colors.text.primary }}>
+                  ₹{stats?.totalRevenue.toLocaleString()}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs lg:text-sm">
+              <TrendingUp className="h-3 w-3 lg:h-4 lg:w-4 text-green-400" />
+              <span className="text-green-400 font-medium">₹{stats?.platformEarnings.toLocaleString()}</span>
+              <span className="truncate" style={{ color: colors.text.secondary }}>platform earnings</span>
+            </div>
+          </div>
+
+          <div className="p-4 lg:p-6 rounded-xl border bg-gradient-to-br from-purple-500/5 to-purple-600/10" style={{ borderColor: colors.accent.border }}>
+            <div className="flex items-center gap-3 mb-3 lg:mb-4">
+              <div className="p-2 lg:p-3 bg-purple-500/10 rounded-lg">
+                <Users2 className="h-5 w-5 lg:h-6 lg:w-6 text-purple-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs lg:text-sm font-medium truncate" style={{ color: colors.text.secondary }}>Total Customers</p>
+                <p className="text-xl lg:text-2xl font-bold" style={{ color: colors.text.primary }}>
+                  {stats?.totalCustomers.toLocaleString()}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs lg:text-sm">
+              <Users2 className="h-3 w-3 lg:h-4 lg:w-4 text-purple-400" />
+              <span className="text-purple-400 font-medium">892</span>
+              <span className="truncate" style={{ color: colors.text.secondary }}>active users</span>
+            </div>
+          </div>
+
+          <div className="p-4 lg:p-6 rounded-xl border bg-gradient-to-br from-yellow-500/5 to-yellow-600/10" style={{ borderColor: colors.accent.border }}>
+            <div className="flex items-center gap-3 mb-3 lg:mb-4">
+              <div className="p-2 lg:p-3 bg-yellow-500/10 rounded-lg">
+                <Building2 className="h-5 w-5 lg:h-6 lg:w-6 text-yellow-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs lg:text-sm font-medium truncate" style={{ color: colors.text.secondary }}>Active Venues</p>
+                <p className="text-xl lg:text-2xl font-bold" style={{ color: colors.text.primary }}>
+                  {stats?.totalVenues}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-xs lg:text-sm">
+              <Building2 className="h-3 w-3 lg:h-4 lg:w-4 text-yellow-400" />
+              <span className="text-yellow-400 font-medium">38</span>
+              <span className="truncate" style={{ color: colors.text.secondary }}>high performers</span>
             </div>
           </div>
         </div>
-      )}
 
-      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-56 flex-col bg-sidebar border-r border-sidebar-border">
-        <div className="p-4 border-b border-sidebar-border">
-          <h1 className="font-bold text-lg text-sidebar-foreground font-display">Admin Panel</h1>
-          <p className="text-xs text-sidebar-foreground/60 mt-1">{demoUser?.email}</p>
-        </div>
-        <nav className="flex-1 p-2">
-          {navItems.map((item) => (
-            <button key={item.id} onClick={() => setCurrentView(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors mb-1 ${currentView === item.id ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}>
-              <item.icon className="h-5 w-5" />{item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-sidebar-border">
-          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent text-sm"><LogOut className="h-4 w-4" />Sign Out</button>
-        </div>
-      </aside>
-
-      <main className="lg:ml-56 min-h-screen">
-        <div className="p-4 lg:p-6 max-w-6xl">
-          {currentView === 'dashboard' && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-bold font-display">Dashboard</h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="kpi-card"><div className="flex items-center gap-2 text-muted-foreground mb-2"><CalendarCheck className="h-4 w-4" /><span className="text-xs font-medium">Total Bookings</span></div><p className="text-2xl font-bold">1,247</p><p className="text-xs text-success flex items-center gap-1 mt-1"><TrendingUp className="h-3 w-3" /> +12% this week</p></div>
-                <div className="kpi-card"><div className="flex items-center gap-2 text-muted-foreground mb-2"><DollarSign className="h-4 w-4" /><span className="text-xs font-medium">Platform Revenue</span></div><p className="text-2xl font-bold">₹38,420</p><p className="text-xs text-success flex items-center gap-1 mt-1"><TrendingUp className="h-3 w-3" /> +8% this week</p></div>
-                <div className="kpi-card"><div className="flex items-center gap-2 text-muted-foreground mb-2"><Building2 className="h-4 w-4" /><span className="text-xs font-medium">Active Venues</span></div><p className="text-2xl font-bold">24</p><p className="text-xs text-muted-foreground mt-1">3 pending approval</p></div>
-                <div className="kpi-card"><div className="flex items-center gap-2 text-muted-foreground mb-2"><Users className="h-4 w-4" /><span className="text-xs font-medium">Total Users</span></div><p className="text-2xl font-bold">892</p><p className="text-xs text-success flex items-center gap-1 mt-1"><TrendingUp className="h-3 w-3" /> +24 this week</p></div>
-              </div>
-              <div className="grid lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 control-panel">
-                  <h3 className="font-semibold mb-4">Revenue Trend (7 Days)</h3>
-                  <div className="h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={revenueData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                        <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                        <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
-                        <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
+        {/* Quick Actions */}
+        <div>
+          <h3 className="text-lg lg:text-xl font-semibold mb-3 lg:mb-4" style={{ color: colors.text.primary }}>Quick Actions</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+            {quickActions.map((action, index) => {
+              const Icon = action.icon;
+              return (
+                <button
+                  key={index}
+                  onClick={() => navigate(action.path)}
+                  className={`p-4 lg:p-6 rounded-xl border bg-gradient-to-br ${getActionColor(action.color)} transition-all duration-200 text-left hover:scale-[1.02] touch-manipulation`}
+                >
+                  <div className="flex items-center gap-3 lg:gap-4">
+                    <div className="p-2 lg:p-3 bg-black/10 rounded-lg">
+                      <Icon className={`h-5 w-5 lg:h-6 lg:w-6 ${getIconColor(action.color)}`} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-semibold mb-1 text-sm lg:text-base" style={{ color: colors.text.primary }}>
+                        {action.title}
+                      </h4>
+                      <p className="text-xs lg:text-sm" style={{ color: colors.text.secondary }}>
+                        {action.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="control-panel">
-                  <h3 className="font-semibold mb-4">Sport Distribution</h3>
-                  <div className="h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart><Pie data={sportDistribution} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value">{sportDistribution.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip /></PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="mt-2 grid grid-cols-2 gap-1">
-                    {sportDistribution.map((item) => (<div key={item.name} className="flex items-center gap-2 text-xs"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} /><span className="text-muted-foreground">{item.name}</span><span className="font-medium">{item.value}%</span></div>))}
-                  </div>
-                </div>
-              </div>
-              <div className="control-panel">
-                <h3 className="font-semibold mb-4">Recent Transactions</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead><tr className="border-b border-border">
-                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">ID</th>
-                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">User</th>
-                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Amount</th>
-                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Commission</th>
-                      <th className="text-center py-2 px-3 font-medium text-muted-foreground">Status</th>
-                    </tr></thead>
-                    <tbody>
-                      {transactionsData.slice(0, 3).map((txn) => (
-                        <tr key={txn.id} className="border-b border-border/50">
-                          <td className="py-2.5 px-3 font-mono text-xs">{txn.id}</td>
-                          <td className="py-2.5 px-3">{txn.user}</td>
-                          <td className="py-2.5 px-3 text-right">₹{txn.amount}</td>
-                          <td className="py-2.5 px-3 text-right text-success">₹{txn.commission}</td>
-                          <td className="py-2.5 px-3 text-center"><span className={`badge-status ${txn.status === 'success' ? 'badge-available' : 'bg-warning/10 text-warning'}`}>{txn.status}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {currentView === 'users' && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-bold font-display">User Management</h2>
-              <div className="control-panel overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b border-border"><th className="text-left py-3 px-3 font-medium text-muted-foreground">ID</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">Name</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">Email</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Role</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Status</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Actions</th></tr></thead>
-                  <tbody>{usersData.map((user) => (<tr key={user.id} className="border-b border-border/50 hover:bg-muted/30"><td className="py-3 px-3 font-mono text-xs">{user.id}</td><td className="py-3 px-3 font-medium">{user.name}</td><td className="py-3 px-3 text-muted-foreground">{user.email}</td><td className="py-3 px-3 text-center"><span className="badge-sport capitalize">{user.role}</span></td><td className="py-3 px-3 text-center"><span className={`badge-status ${user.status === 'active' ? 'badge-available' : 'bg-warning/10 text-warning'}`}>{user.status}</span></td><td className="py-3 px-3 text-center">{user.status === 'pending' ? <Button size="sm" className="h-7 text-xs btn-premium">Approve</Button> : <Button variant="outline" size="sm" className="h-7 text-xs">View</Button>}</td></tr>))}</tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {currentView === 'venues' && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-bold font-display">Venue Management</h2>
-              <div className="control-panel overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b border-border"><th className="text-left py-3 px-3 font-medium text-muted-foreground">ID</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">Venue Name</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">Owner</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Sport</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Bookings</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Status</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Actions</th></tr></thead>
-                  <tbody>{venuesData.map((venue) => (<tr key={venue.id} className="border-b border-border/50 hover:bg-muted/30"><td className="py-3 px-3 font-mono text-xs">{venue.id}</td><td className="py-3 px-3 font-medium">{venue.name}</td><td className="py-3 px-3 text-muted-foreground">{venue.owner}</td><td className="py-3 px-3 text-center"><span className="badge-sport">{venue.sport}</span></td><td className="py-3 px-3 text-center font-medium">{venue.bookings}</td><td className="py-3 px-3 text-center"><span className={`badge-status ${venue.status === 'active' ? 'badge-available' : 'bg-warning/10 text-warning'}`}>{venue.status}</span></td><td className="py-3 px-3 text-center">{venue.status === 'pending' ? <Button size="sm" className="h-7 text-xs btn-premium">Approve</Button> : <Button variant="outline" size="sm" className="h-7 text-xs">View</Button>}</td></tr>))}</tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {currentView === 'transactions' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between"><h2 className="text-xl font-bold font-display">Transactions</h2><Button variant="outline" className="gap-2"><Download className="h-4 w-4" />Export CSV</Button></div>
-              <div className="control-panel overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b border-border"><th className="text-left py-3 px-3 font-medium text-muted-foreground">Transaction ID</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">Booking</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">User</th><th className="text-left py-3 px-3 font-medium text-muted-foreground">Date</th><th className="text-right py-3 px-3 font-medium text-muted-foreground">Amount</th><th className="text-right py-3 px-3 font-medium text-muted-foreground">Commission</th><th className="text-center py-3 px-3 font-medium text-muted-foreground">Status</th></tr></thead>
-                  <tbody>{transactionsData.map((txn) => (<tr key={txn.id} className="border-b border-border/50 hover:bg-muted/30"><td className="py-3 px-3 font-mono text-xs">{txn.id}</td><td className="py-3 px-3 font-mono text-xs">{txn.booking}</td><td className="py-3 px-3">{txn.user}</td><td className="py-3 px-3 text-muted-foreground">{txn.date}</td><td className="py-3 px-3 text-right font-medium">₹{txn.amount}</td><td className="py-3 px-3 text-right text-success font-medium">₹{txn.commission}</td><td className="py-3 px-3 text-center"><span className={`badge-status ${txn.status === 'success' ? 'badge-available' : 'bg-warning/10 text-warning'}`}>{txn.status}</span></td></tr>))}</tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {currentView === 'settings' && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-bold font-display">Platform Settings</h2>
-              <div className="control-panel max-w-md">
-                <h3 className="font-semibold mb-4">Service Charge Configuration</h3>
-                <div className="space-y-4">
-                  <div><label className="text-sm font-medium text-muted-foreground">Service Charge (%)</label><p className="text-xs text-muted-foreground mb-2">Applied to all bookings as platform fee</p><input type="number" value={serviceFee} onChange={(e) => setServiceFee(e.target.value)} min="0" max="10" step="0.5" className="w-full h-10 px-3 border border-border rounded-md bg-background" /></div>
-                  <Button className="btn-premium">Update Settings</Button>
-                </div>
-              </div>
-            </div>
-          )}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </main>
-    </div>
+
+        {/* Platform Health */}
+        <div className="p-4 lg:p-6 rounded-xl border" style={{ backgroundColor: colors.bg.surface, borderColor: colors.accent.border }}>
+          <h3 className="text-lg lg:text-xl font-semibold mb-3 lg:mb-4" style={{ color: colors.text.primary }}>Platform Health</h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
+            <div className="text-center">
+              <div className="w-12 h-12 lg:w-16 lg:h-16 mx-auto mb-2 lg:mb-3 rounded-full bg-green-500/10 flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 lg:h-8 lg:w-8 text-green-400" />
+              </div>
+              <p className="font-semibold text-sm lg:text-base" style={{ color: colors.text.primary }}>Excellent</p>
+              <p className="text-xs lg:text-sm" style={{ color: colors.text.secondary }}>Booking Growth</p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-12 h-12 lg:w-16 lg:h-16 mx-auto mb-2 lg:mb-3 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <Users2 className="h-6 w-6 lg:h-8 lg:w-8 text-blue-400" />
+              </div>
+              <p className="font-semibold text-sm lg:text-base" style={{ color: colors.text.primary }}>High</p>
+              <p className="text-xs lg:text-sm" style={{ color: colors.text.secondary }}>User Engagement</p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-12 h-12 lg:w-16 lg:h-16 mx-auto mb-2 lg:mb-3 rounded-full bg-purple-500/10 flex items-center justify-center">
+                <Building2 className="h-6 w-6 lg:h-8 lg:w-8 text-purple-400" />
+              </div>
+              <p className="font-semibold text-sm lg:text-base" style={{ color: colors.text.primary }}>Stable</p>
+              <p className="text-xs lg:text-sm" style={{ color: colors.text.secondary }}>Venue Network</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </AdminLayout>
   );
 };
 
-export default AdminDashboard;
+export default function AdminDashboard() {
+  return (
+    <AdminThemeProvider>
+      <AdminDashboardContent />
+    </AdminThemeProvider>
+  );
+}

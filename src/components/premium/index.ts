@@ -3,4 +3,5 @@ export { PremiumBanner } from './PremiumBanner';
 export { PremiumFilterBar } from './PremiumFilterBar';
 export { PremiumVenueCard } from './PremiumVenueCard';
 export { PremiumVenueDetail } from './PremiumVenueDetail';
-export { PremiumBookingFlow } from './PremiumBookingFlow';
+export { NewBookingFlow } from './NewBookingFlow';
+export { PremiumBottomNav } from './PremiumBottomNav';

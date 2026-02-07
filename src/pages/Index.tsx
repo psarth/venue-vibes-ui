@@ -1,139 +1,326 @@
-import { useState, useMemo } from 'react';
-import { 
-  PremiumNavbar, 
-  PremiumBanner, 
-  PremiumFilterBar, 
-  PremiumVenueCard,
-  PremiumVenueDetail,
-  PremiumBookingFlow
-} from '@/components/premium';
+
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { venues, Venue, Slot } from '@/data/venues';
+import { FilterBar } from '@/components/home/FilterBar';
+import { LocationSelector } from '@/components/home/LocationSelector';
+import { VenueSection } from '@/components/home/VenueSection';
+import { HomeBottomNav } from '@/components/home/HomeBottomNav';
+import {
+  PremiumVenueDetail,
+} from '@/components/premium';
+import { PremiumBookingFlow } from '@/components/premium/PremiumBookingFlow';
+import { useAuth } from '@/hooks/useAuth';
+import { MapPin, Bell, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { getVenuesBySport, listenForVenueUpdates, listenForPriceUpdates, listenForSlotBlocking, listenForFeeUpdates, type VenueData } from '@/utils/venueSync';
 
 type View = 'home' | 'detail' | 'booking';
 
 const Index = () => {
-  const [selectedCity, setSelectedCity] = useState('Bangalore');
+  // State
   const [selectedSport, setSelectedSport] = useState('All Sports');
-  const [selectedPrice, setSelectedPrice] = useState('default');
-  const [selectedAvailability, setSelectedAvailability] = useState('available');
-  const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
-  const [selectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [selectedAvailability, setSelectedAvailability] = useState('All');
   const [currentView, setCurrentView] = useState<View>('home');
+  const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
+  const [selectedBookingSport, setSelectedBookingSport] = useState<string>('');
+  const [activeTab, setActiveTab] = useState('home');
+  const [selectedCity, setSelectedCity] = useState(localStorage.getItem('venue-vibes-location') || 'Kolkata');
+  const [syncedVenues, setSyncedVenues] = useState<VenueData[]>([]);
+  const [updateTrigger, setUpdateTrigger] = useState(0); // Force re-render on sync
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const filteredVenues = useMemo(() => {
-    let filtered = venues.filter((venue) => venue.city === selectedCity);
+  // 🔥 REAL-TIME SYNC: Listen for venue updates
+  useEffect(() => {
+    const unsubscribeVenue = listenForVenueUpdates(() => {
+      setUpdateTrigger(prev => prev + 1);
+      console.log('🔄 Venue updated - refreshing customer view');
+    });
 
-    // Filter by sport
-    if (selectedSport !== 'All Sports') {
-      filtered = filtered.filter((venue) => venue.sport === selectedSport);
+    const unsubscribePrice = listenForPriceUpdates(() => {
+      setUpdateTrigger(prev => prev + 1);
+      console.log('🔄 Prices updated - refreshing customer view');
+    });
+
+    const unsubscribeSlots = listenForSlotBlocking(() => {
+      setUpdateTrigger(prev => prev + 1);
+      console.log('🔄 Slots updated - refreshing customer view');
+    });
+
+    const unsubscribeFees = listenForFeeUpdates(() => {
+      setUpdateTrigger(prev => prev + 1);
+      console.log('🔄 Fees updated - refreshing customer view');
+    });
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'customer_venues' || e.key === 'customer_slot_prices' || e.key === 'customer_blocked_slots') {
+        setUpdateTrigger(prev => prev + 1);
+        console.log(`🔄 Storage changed (${e.key}) - refreshing customer view`);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      unsubscribeVenue();
+      unsubscribePrice();
+      unsubscribeSlots();
+      unsubscribeFees();
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Update localStorage when city changes
+  useEffect(() => {
+    localStorage.setItem('venue-vibes-location', selectedCity);
+  }, [selectedCity]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (tab === 'profile') {
+      navigate('/profile');
+    } else if (tab === 'my-games' || tab === 'book') {
+      navigate('/bookings');
     }
+  };
 
-    // Sort by price
-    if (selectedPrice === 'low-high') {
-      filtered = [...filtered].sort((a, b) => a.pricePerHour - b.pricePerHour);
-    } else if (selectedPrice === 'high-low') {
-      filtered = [...filtered].sort((a, b) => b.pricePerHour - a.pricePerHour);
-    }
-
-    return filtered;
-  }, [selectedCity, selectedSport, selectedPrice, selectedAvailability]);
-
+  // Handlers
   const handleVenueClick = (venue: Venue) => {
+    window.scrollTo(0, 0);
     setSelectedVenue(venue);
+    // Reset booking sport to default from venue or first sport
+    setSelectedBookingSport(venue.sport || 'Badminton');
     setCurrentView('detail');
   };
 
-  const handleBook = (slot: Slot) => {
-    setSelectedSlot(slot);
+  const handleBook = (sport: string) => {
+    window.scrollTo(0, 0);
+    setSelectedBookingSport(sport);
     setCurrentView('booking');
   };
 
   const handleBackToHome = () => {
+    window.scrollTo(0, 0);
     setSelectedVenue(null);
-    setSelectedSlot(null);
     setCurrentView('home');
   };
 
   const handleBackToDetail = () => {
-    setSelectedSlot(null);
+    window.scrollTo(0, 0);
     setCurrentView('detail');
   };
 
-  // Booking Flow View
-  if (currentView === 'booking' && selectedVenue && selectedSlot) {
+  const [localVenues, setLocalVenues] = useState<Venue[]>(venues);
+
+
+  // 🔥 LOAD SYNCED VENUES FROM CUSTOMER STORAGE
+  useEffect(() => {
+    const loadSyncedVenues = () => {
+      const customerVenues = localStorage.getItem('customer_venues');
+      if (customerVenues) {
+        const parsed: any[] = JSON.parse(customerVenues);
+        // Filter only approved and live venues
+        const liveVenues = parsed.filter(v => v.status === 'approved' || v.status === undefined);
+        setSyncedVenues(liveVenues);
+        console.log('✅ Loaded verified venues:', liveVenues.length);
+      }
+    };
+
+    loadSyncedVenues();
+  }, [updateTrigger]); // Re-load when sync events trigger
+
+  // 🔥 Update selected venue if data changes while viewing
+  useEffect(() => {
+    if (selectedVenue) {
+      const updated = syncedVenues.find(v => v.id === selectedVenue.id.split('_')[0]);
+      if (updated) {
+        // Map back to Venue format
+        const sport = selectedVenue.sport;
+        const newVenueData: Venue = {
+          id: `${updated.id}_${sport}`,
+          name: updated.name,
+          location: updated.address,
+          city: updated.city || 'Kolkata',
+          sport: sport,
+          pricePerHour: updated.pricePerSlot,
+          rating: updated.rating || 4.5,
+          reviewCount: selectedVenue.reviewCount,
+          image: updated.images[0] || selectedVenue.image,
+          gallery: updated.images || selectedVenue.gallery,
+          description: updated.description || '',
+          amenities: updated.amenities || [],
+          rules: selectedVenue.rules,
+          sports: updated.sports,
+          sportResources: updated.sportResources,
+          convenienceFee: updated.convenienceFee,
+          feeType: updated.feeType,
+          isFeeEnabled: updated.isFeeEnabled
+        };
+        setSelectedVenue(newVenueData);
+      }
+    }
+  }, [syncedVenues]);
+
+  // 🔥 SPORT-WISE FILTER LOGIC WITH REAL-TIME SYNC
+  const sections = useMemo(() => {
+    // Combine static venues with synced venues
+    const allVenues = [...localVenues];
+
+    // Convert synced venues to Venue format and add them
+    syncedVenues.forEach(syncedVenue => {
+      // Check if venue already exists (avoid duplicates)
+      if (!allVenues.find(v => v.id === syncedVenue.id)) {
+        // For each sport, create a venue entry
+        syncedVenue.sports.forEach(sport => {
+          const venueEntry: Venue = {
+            id: `${syncedVenue.id}_${sport}`,
+            name: syncedVenue.name,
+            location: syncedVenue.address,
+            city: syncedVenue.city || 'Kolkata',
+            sport: sport,
+            pricePerHour: syncedVenue.pricePerSlot,
+            rating: syncedVenue.rating || 4.5,
+            reviewCount: 0,
+            image: syncedVenue.images[0] || 'https://images.unsplash.com/photo-1626224583764-847890e05851?w=800&q=80',
+            gallery: syncedVenue.images || [],
+            description: syncedVenue.description || '',
+            amenities: syncedVenue.amenities || ['Parking', 'Water'],
+            rules: [],
+            sports: syncedVenue.sports,
+            sportResources: syncedVenue.sportResources,
+            convenienceFee: syncedVenue.convenienceFee,
+            feeType: syncedVenue.feeType,
+            isFeeEnabled: syncedVenue.isFeeEnabled
+          };
+          allVenues.push(venueEntry);
+        });
+      }
+    });
+
+    // Filter by City (Strict match)
+    const cityFiltered = allVenues.filter(v => {
+      const match = v.city === selectedCity;
+      return match;
+    });
+
+    console.log(`📍 Filtering for ${selectedCity}: Found ${cityFiltered.length} venues`);
+
+    let filteredVenues = cityFiltered;
+
+    // Filter by Sport (sport-wise discovery)
+    if (selectedSport !== 'All Sports') {
+      filteredVenues = filteredVenues.filter(v => v.sport === selectedSport);
+    }
+
+    // Group by sport
+    const groups: { [key: string]: Venue[] } = {};
+    filteredVenues.forEach(venue => {
+      if (!groups[venue.sport]) groups[venue.sport] = [];
+      groups[venue.sport].push(venue);
+    });
+
+    // Return array of sections
+    return Object.entries(groups).map(([sport, data]) => ({
+      title: sport,
+      data
+    }));
+  }, [selectedSport, selectedAvailability, selectedCity, syncedVenues, localVenues, updateTrigger]);
+
+  // Views
+  if (currentView === 'booking' && selectedVenue) {
     return (
       <PremiumBookingFlow
         venue={selectedVenue}
-        slot={selectedSlot}
-        selectedDate={selectedDate}
+        initialSport={selectedBookingSport}
         onBack={handleBackToDetail}
         onComplete={handleBackToHome}
       />
     );
   }
 
-  // Venue Detail View
   if (currentView === 'detail' && selectedVenue) {
     return (
-      <PremiumVenueDetail 
-        venue={selectedVenue} 
+      <PremiumVenueDetail
+        venue={selectedVenue}
         onBack={handleBackToHome}
         onBook={handleBook}
       />
     );
   }
 
-  // Home View
   return (
-    <div className="min-h-screen bg-background bg-pattern">
-      {/* Sticky Navigation */}
-      <PremiumNavbar />
-
-      {/* Top Banner */}
-      <PremiumBanner 
-        selectedCity={selectedCity} 
-        onCityChange={setSelectedCity} 
-      />
-
-      {/* Filter Bar - Sticky below nav */}
-      <PremiumFilterBar
-        selectedSport={selectedSport}
-        selectedPrice={selectedPrice}
-        selectedAvailability={selectedAvailability}
-        onSportChange={setSelectedSport}
-        onPriceChange={setSelectedPrice}
-        onAvailabilityChange={setSelectedAvailability}
-      />
-
-      {/* Venue Listings */}
-      <div className="px-4 py-4 space-y-4">
-        {filteredVenues.length > 0 ? (
-          filteredVenues.map((venue, index) => (
-            <div 
-              key={venue.id}
-              style={{ animationDelay: `${index * 0.05}s` }}
-            >
-              <PremiumVenueCard
-                venue={venue}
-                onClick={() => handleVenueClick(venue)}
-              />
+    <div className="min-h-screen bg-gray-50 flex flex-col relative pb-24 font-sans">
+      {/* Premium Blue Header - Realistic Gradient & Clean */}
+      <div className="bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 pt-safe-top pb-6 rounded-b-[2rem] shadow-lg shadow-blue-500/20 z-50 sticky top-0 transition-all">
+        <div className="px-6 pt-4">
+          <div className="flex justify-between items-center">
+            {/* Left: Location Selector */}
+            <div className="flex gap-2.5 items-center">
+              <LocationSelector selectedCity={selectedCity} onSelectCity={setSelectedCity} />
             </div>
-          ))
-        ) : (
-          <div className="card-premium p-8 text-center animate-fade-in">
-            <div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-              <svg className="h-8 w-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <p className="text-lg font-bold font-display text-foreground mb-2">No venues found</p>
-            <p className="text-sm text-muted-foreground">
-              Try adjusting your filters to find available venues
-            </p>
+
+            {/* Right: Notification Icon */}
+            <button className="relative w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 hover:bg-white/20 transition-all active:scale-95 shadow-sm">
+              <Bell className="w-5 h-5 text-white" />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-blue-400 shadow-sm"></span>
+            </button>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Filter Bar Section - Sticky below header */}
+      <div className="sticky top-[86px] z-40 bg-gray-50/95 backdrop-blur-md pb-4 pt-2 transition-all mt-2">
+        <FilterBar
+          selectedSport={selectedSport}
+          onSelectSport={setSelectedSport}
+          selectedAvailability={selectedAvailability}
+          onSelectAvailability={setSelectedAvailability}
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+        />
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 space-y-6 animate-fade-in-up px-0 pt-4">
+        {/* Venue Sections */}
+        <div className="space-y-8 pb-24">
+          {sections.length > 0 ? (
+            sections.map((section) => (
+              <VenueSection
+                key={section.title}
+                title={section.title}
+                venues={section.data}
+                onVenueClick={handleVenueClick}
+              />
+            ))
+          ) : (
+            <div className="text-center py-20 px-6">
+              <div className="bg-white p-6 rounded-3xl shadow-sm inline-block mb-4">
+                <svg className="w-12 h-12 text-gray-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">No venues found</h3>
+              <button
+                onClick={() => { setSelectedSport('All Sports'); setSelectedAvailability('All'); }}
+                className="mt-4 text-primary font-semibold text-sm hover:underline"
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modern Bottom Navigation */}
+      <HomeBottomNav currentTab={activeTab} onTabChange={handleTabChange} />
     </div>
   );
 };

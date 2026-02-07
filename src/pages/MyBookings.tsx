@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { PremiumBottomNav } from '@/components/premium';
 
 interface Booking {
   id: string;
@@ -188,7 +189,7 @@ const MyBookings = () => {
       </div>
 
       {/* Bookings List */}
-      <div className="px-4 pb-4 space-y-3">
+      <div className="px-4 pb-20 space-y-3">
         {displayedBookings.length === 0 ? (
           <div className="card-premium p-8 text-center">
             <Calendar className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
@@ -256,6 +257,9 @@ const MyBookings = () => {
           ))
         )}
       </div>
+
+      {/* Bottom Navigation */}
+      <PremiumBottomNav />
     </div>
   );
 };
