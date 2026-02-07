@@ -4,6 +4,7 @@ export interface Venue {
   location: string;
   city: string;
   sport: string;
+  sports?: string[];
   pricePerHour: number;
   rating: number;
   reviewCount: number;
@@ -12,6 +13,10 @@ export interface Venue {
   description: string;
   amenities: string[];
   rules: string[];
+  sportResources?: Record<string, number>;
+  convenienceFee?: number;
+  feeType?: 'fixed' | 'percentage';
+  isFeeEnabled?: boolean;
 }
 
 export interface Slot {
@@ -37,6 +42,26 @@ export const sports = [
 
 export const venues: Venue[] = [
   {
+    id: 'multi-sport-test',
+    name: 'Multi Sport Test Arena',
+    location: 'Test Location, Bangalore',
+    city: 'Bangalore',
+    sport: 'Multi-Sport',
+    pricePerHour: 500,
+    rating: 4.8,
+    reviewCount: 150,
+    image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&q=80&auto=format&fit=crop',
+    gallery: [
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1585222515068-7201a72c9a0b?w=1200&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1509475826633-fed577a2c71b?w=1200&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?w=1200&q=80&auto=format&fit=crop',
+    ],
+    description: 'Multi-sport testing facility with Cricket, Football, and Badminton courts. Perfect for testing booking flow with multiple sports and courts.',
+    amenities: ['Parking', 'Changing Room', 'AC', 'Drinking Water', 'Equipment Rental', 'WiFi', 'Cafeteria'],
+    rules: ['Sports shoes mandatory', 'No food inside courts', 'Cancel 4 hours before', 'Follow sport-specific rules'],
+  },
+  {
     id: '1',
     name: 'PowerPlay Badminton Arena',
     location: 'Indiranagar, Bangalore',
@@ -45,13 +70,11 @@ export const venues: Venue[] = [
     pricePerHour: 450,
     rating: 4.7,
     reviewCount: 328,
-    image: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1585222515068-7201a72c9a0b?w=1200&q=80&auto=format&fit=crop',
     gallery: [
-      'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&q=80',
-      'https://images.unsplash.com/photo-1613918431703-aa50889e3be6?w=800&q=80',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80',
-      'https://images.unsplash.com/photo-1519311965067-36d3e5f33d39?w=800&q=80',
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
+      'https://images.unsplash.com/photo-1585222515068-7201a72c9a0b?w=1200&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1551882547-ff6d3d2a4e8b?w=1200&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1542365887-3e5e3b6d2d9b?w=1200&q=80&auto=format&fit=crop',
     ],
     description: 'Premium indoor badminton courts featuring professional-grade synthetic flooring and tournament-standard lighting. Our air-conditioned facility houses 6 courts with dedicated warm-up areas and spectator seating.',
     amenities: ['Parking', 'Changing Room', 'AC', 'Drinking Water', 'Equipment Rental', 'WiFi'],
@@ -66,13 +89,11 @@ export const venues: Venue[] = [
     pricePerHour: 1800,
     rating: 4.8,
     reviewCount: 512,
-    image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1509475826633-fed577a2c71b?w=1200&q=80&auto=format&fit=crop',
     gallery: [
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
-      'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80',
-      'https://images.unsplash.com/photo-1551958219-acbc608c6377?w=800&q=80',
-      'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&q=80',
-      'https://images.unsplash.com/photo-1518604666860-9ed391f76460?w=800&q=80',
+      'https://images.unsplash.com/photo-1509475826633-fed577a2c71b?w=1200&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1505672678657-cc7037095e2e?w=1200&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1495567720989-cebdbdd97913?w=1200&q=80&auto=format&fit=crop',
     ],
     description: 'FIFA-quality artificial turf with 1500 lux floodlights for night games. Perfect for 5-a-side and 7-a-side formats with professional goal posts, boundary nets, and dedicated dugout areas for teams.',
     amenities: ['Floodlights', 'Parking', 'Changing Room', 'Restroom', 'First Aid', 'Drinking Water'],
@@ -87,13 +108,11 @@ export const venues: Venue[] = [
     pricePerHour: 350,
     rating: 4.3,
     reviewCount: 186,
-    image: 'https://images.unsplash.com/photo-1613918431703-aa50889e3be6?w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1533777324565-a040eb52fac2?w=1200&q=80&auto=format&fit=crop',
     gallery: [
-      'https://images.unsplash.com/photo-1613918431703-aa50889e3be6?w=800&q=80',
-      'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&q=80',
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80',
-      'https://images.unsplash.com/photo-1519311965067-36d3e5f33d39?w=800&q=80',
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
+      'https://images.unsplash.com/photo-1533777324565-a040eb52fac2?w=1200&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1521412644187-c49fa049e84d?w=1200&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1495562569060-2eec283d3391?w=1200&q=80&auto=format&fit=crop',
     ],
     description: 'Budget-friendly badminton facility with 4 synthetic courts and standard lighting. Ideal for recreational players and beginners looking for quality courts at affordable prices.',
     amenities: ['Parking', 'Drinking Water', 'Equipment Rental', 'Restroom'],
@@ -108,13 +127,11 @@ export const venues: Venue[] = [
     pricePerHour: 700,
     rating: 4.6,
     reviewCount: 203,
-    image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?w=1200&q=80&auto=format&fit=crop',
     gallery: [
-      'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&q=80',
-      'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&q=80',
-      'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&q=80',
-      'https://images.unsplash.com/photo-1542144612-1b3641ec3459?w=800&q=80',
-      'https://images.unsplash.com/photo-1551773188-0801da12ddae?w=800&q=80',
+      'https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?w=1200&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1200&q=80&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1521412644187-c49fa049e84d?w=1200&q=80&auto=format&fit=crop',
     ],
     description: 'Professional tennis facility with 4 clay courts and 2 hard courts. Coaching available for all skill levels with ball machine access and video analysis for serious players.',
     amenities: ['Coaching', 'Ball Machine', 'Parking', 'Cafeteria', 'Pro Shop', 'Changing Room'],
@@ -204,27 +221,161 @@ export const venues: Venue[] = [
     amenities: ['AC', 'Parking', 'Equipment Rental', 'Coaching', 'Drinking Water'],
     rules: ['Indoor shoes only', 'No food near tables', 'Paddles available on request'],
   },
+  // Duplicated Venues for Scrolling Test
+  {
+    id: '1-dup',
+    name: 'PowerPlay Badminton Arena 2',
+    location: 'Indiranagar, Bangalore',
+    city: 'Bangalore',
+    sport: 'Badminton',
+    pricePerHour: 450,
+    rating: 4.7,
+    reviewCount: 328,
+    image: 'https://images.unsplash.com/photo-1585222515068-7201a72c9a0b?w=1200&q=80&auto=format&fit=crop',
+    gallery: [],
+    description: 'Duplicate for testing scroll.',
+    amenities: [],
+    rules: [],
+  },
+  {
+    id: '2-dup',
+    name: 'Goal Rush Football Turf 2',
+    location: 'Koramangala 5th Block, Bangalore',
+    city: 'Bangalore',
+    sport: 'Football',
+    pricePerHour: 1800,
+    rating: 4.8,
+    reviewCount: 512,
+    image: 'https://images.unsplash.com/photo-1509475826633-fed577a2c71b?w=1200&q=80&auto=format&fit=crop',
+    gallery: [],
+    description: 'Duplicate for testing scroll.',
+    amenities: [],
+    rules: [],
+  },
+  {
+    id: '3-dup',
+    name: 'Smash Zone Badminton Hub 2',
+    location: 'HSR Layout Sector 2, Bangalore',
+    city: 'Bangalore',
+    sport: 'Badminton',
+    pricePerHour: 350,
+    rating: 4.3,
+    reviewCount: 186,
+    image: 'https://images.unsplash.com/photo-1533777324565-a040eb52fac2?w=1200&q=80&auto=format&fit=crop',
+    gallery: [],
+    description: 'Duplicate for testing scroll.',
+    amenities: [],
+    rules: [],
+  },
+  {
+    id: '5-dup',
+    name: 'Hoop Stars Basketball Court 2',
+    location: 'JP Nagar 6th Phase, Bangalore',
+    city: 'Bangalore',
+    sport: 'Basketball',
+    pricePerHour: 600,
+    rating: 4.5,
+    reviewCount: 142,
+    image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80',
+    gallery: [],
+    description: 'Duplicate for testing scroll.',
+    amenities: [],
+    rules: [],
+  },
+  {
+    id: '6-dup',
+    name: 'Strike Zone Cricket Academy 2',
+    location: 'Electronic City Phase 1, Bangalore',
+    city: 'Bangalore',
+    sport: 'Cricket',
+    pricePerHour: 1200,
+    rating: 4.9,
+    reviewCount: 687,
+    image: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=800&q=80',
+    gallery: [],
+    description: 'Duplicate for testing scroll.',
+    amenities: [],
+    rules: [],
+  },
+  // MORE DUPLICATES FOR SCROLL TEST
+  // Football (Need 1 more to make 3)
+  {
+    id: '2-dup-2',
+    name: 'Champions Turf Arena',
+    location: 'Marathahalli, Bangalore',
+    city: 'Bangalore',
+    sport: 'Football',
+    pricePerHour: 1600,
+    rating: 4.6,
+    reviewCount: 420,
+    image: 'https://images.unsplash.com/photo-1551958219-acbc608c6377?w=1200&q=80',
+    gallery: [],
+    description: 'Third football venue for scroll test.',
+    amenities: [],
+    rules: [],
+  },
+  // Cricket (Need 1 more to make 3)
+  {
+    id: '6-dup-2',
+    name: 'Legends Cricket Ground',
+    location: 'Sarjapur Road, Bangalore',
+    city: 'Bangalore',
+    sport: 'Cricket',
+    pricePerHour: 1500,
+    rating: 4.8,
+    reviewCount: 300,
+    image: 'https://images.unsplash.com/photo-1606925797300-0b35e9d17d4e?w=800&q=80',
+    gallery: [],
+    description: 'Third cricket venue for scroll test.',
+    amenities: [],
+    rules: [],
+  },
+  // Basketball (Need 1 more to make 3)
+  {
+    id: '5-dup-2',
+    name: 'Dunk Masters Court',
+    location: 'Whitefield, Bangalore',
+    city: 'Bangalore',
+    sport: 'Basketball',
+    pricePerHour: 750,
+    rating: 4.7,
+    reviewCount: 180,
+    image: 'https://images.unsplash.com/photo-1505666287802-931dc83948e9?w=800&q=80',
+    gallery: [],
+    description: 'Third basketball venue for scroll test.',
+    amenities: [],
+    rules: [],
+  },
 ];
 
-export const generateSlots = (date: Date): Slot[] => {
+export const generateSlots = (date: Date, basePrice: number = 500): Slot[] => {
   const slots: Slot[] = [];
   const hours = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
-  
+
+  // Use date as seed for deterministic pricing
+  const dateSeed = date.toDateString();
+
   hours.forEach((hour, index) => {
-    const period: 'morning' | 'afternoon' | 'evening' = 
+    const period: 'morning' | 'afternoon' | 'evening' =
       hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
-    
-    const basePrice = period === 'morning' ? 400 : period === 'afternoon' ? 500 : 600;
-    const available = Math.random() > 0.3;
-    
+
+    // Modifier based on period (Morning -10%, Afternoon Base, Evening +15%)
+    const modifier = period === 'morning' ? 0.9 : period === 'afternoon' ? 1.0 : 1.15;
+    const finalBasePrice = Math.round(basePrice * modifier);
+
+    // Deterministic pricing: use date + hour to create consistent price
+    const seed = dateSeed.split('').reduce((a, b) => a + b.charCodeAt(0), 0) + hour;
+    const priceVariation = (seed * 73) % 50; // Smaller variation for realism
+    const available = (seed * 97) % 10 > 3;
+
     slots.push({
-      id: `slot-${index}`,
+      id: `slot-${hour}-${date.getTime()}`,
       time: `${hour.toString().padStart(2, '0')}:00 - ${(hour + 1).toString().padStart(2, '0')}:00`,
-      price: basePrice + Math.floor(Math.random() * 200),
+      price: finalBasePrice + priceVariation,
       available,
       period,
     });
   });
-  
+
   return slots;
 };

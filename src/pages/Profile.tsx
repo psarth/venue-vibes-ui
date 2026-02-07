@@ -1,27 +1,24 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Phone, Camera, Calendar, CreditCard, LogOut, ChevronRight, Shield, Building2 } from 'lucide-react';
+import { ArrowLeft, User, LogOut, ChevronRight, Heart, Headphones, Building2, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { HomeBottomNav } from '@/components/home/HomeBottomNav';
+import OwnerNavigation from '@/components/OwnerNavigation';
 
 interface Profile {
   full_name: string | null;
   phone: string | null;
-  avatar_url: string | null;
+  role: string | null;
 }
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, userRole, signOut, loading, demoUser } = useAuth();
+  const { user, signOut, loading, demoUser } = useAuth();
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ full_name: '', phone: '' });
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!loading && !user && !demoUser) {
@@ -31,309 +28,171 @@ const Profile = () => {
 
   useEffect(() => {
     if (demoUser) {
-      // Set demo profile data
       setProfile({
         full_name: demoUser.name,
-        phone: demoUser.role === 'admin' ? '+91 9876543210' : '+91 ' + (demoUser.role === 'owner' ? '9999999992' : '9999999991'),
-        avatar_url: null,
-      });
-      setEditData({
-        full_name: demoUser.name,
-        phone: demoUser.role === 'admin' ? '+91 9876543210' : '+91 ' + (demoUser.role === 'owner' ? '9999999992' : '9999999991'),
+        phone: demoUser.phone || null,
+        role: demoUser.role
       });
     } else if (user) {
-      fetchProfile();
+      setProfile({
+        full_name: user.user_metadata?.full_name || 'User',
+        phone: user.user_metadata?.phone || user.phone || null,
+        role: user.user_metadata?.role || 'customer'
+      });
     }
   }, [user, demoUser]);
 
-  const fetchProfile = async () => {
-    if (!user) return;
-    
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('full_name, phone, avatar_url')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (!error && data) {
-      setProfile(data);
-      setEditData({
-        full_name: data.full_name || '',
-        phone: data.phone || '',
-      });
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    // Demo mode - just show success
-    if (demoUser) {
-      toast({
-        title: 'Demo Mode',
-        description: 'Profile updates are simulated in demo mode.',
-      });
-      setIsEditing(false);
-      return;
-    }
-
-    if (!user) return;
-    setIsSaving(true);
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: editData.full_name,
-        phone: editData.phone,
-      })
-      .eq('user_id', user.id);
-
-    setIsSaving(false);
-
-    if (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to update profile',
-      });
-    } else {
-      toast({
-        title: 'Profile updated',
-        description: 'Your changes have been saved.',
-      });
-      setIsEditing(false);
-      fetchProfile();
-    }
-  };
-
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    navigate('/auth');
   };
-
-  const getRoleIcon = () => {
-    switch (userRole) {
-      case 'admin': return Shield;
-      case 'owner': return Building2;
-      default: return User;
-    }
-  };
-
-  const getRoleLabel = () => {
-    switch (userRole) {
-      case 'admin': return 'Administrator';
-      case 'owner': return 'Venue Owner';
-      default: return 'Customer';
-    }
-  };
-
-  const RoleIcon = getRoleIcon();
 
   if (loading || (!user && !demoUser)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse-soft text-primary">Loading...</div>
+        <div className="animate-pulse text-primary">Loading...</div>
       </div>
     );
   }
 
-  const displayEmail = demoUser?.email || user?.email || '';
+  const displayPhone = profile?.phone || 'Not Available';
+  const displayName = profile?.full_name || 'User';
+  const displayRole = profile?.role === 'owner' ? 'Venue Owner' : 'Customer';
+  const isOwner = profile?.role === 'owner';
 
   return (
-    <div className="min-h-screen bg-background bg-pattern">
+    <div className="min-h-screen bg-background flex flex-col pb-24">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border shadow-premium-sm">
-        <div className="flex items-center gap-4 h-14 px-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-11 w-11 rounded-xl"
-            onClick={() => navigate('/')}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-bold font-display">Profile</h1>
-        </div>
+      <header className="sticky top-0 z-50 h-14 bg-card border-b border-border flex items-center px-4">
+        <button onClick={() => navigate('/')} className="p-2 -ml-2 hover:bg-muted rounded-md transition-colors">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h1 className="ml-3 text-lg font-semibold font-display">Profile</h1>
       </header>
 
-      {/* Profile Header Card */}
-      <div className="p-4">
-        <div className="card-premium p-6 animate-fade-in">
-          <div className="flex items-center gap-4">
-            {/* Avatar */}
-            <div className="relative">
-              <div className="h-20 w-20 rounded-2xl bg-gradient-premium flex items-center justify-center shadow-premium-lg">
-                {profile?.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt="Avatar" 
-                    className="h-full w-full rounded-2xl object-cover"
-                  />
-                ) : (
-                  <User className="h-8 w-8 text-primary-foreground" />
-                )}
-              </div>
-              <button className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-premium-md">
-                <Camera className="h-4 w-4" />
-              </button>
-            </div>
+      {/* Profile Info Card */}
+      <div className="p-4 border-b border-border bg-card">
+        <div className="flex items-center gap-4">
+          {/* Avatar */}
+          <div className="h-16 w-16 rounded-2xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+            <User className="h-8 w-8 text-primary" />
+          </div>
 
-            {/* Info */}
-            <div className="flex-1">
-              <h2 className="text-xl font-bold font-display">
-                {profile?.full_name || 'User'}
-              </h2>
-              <p className="text-sm text-muted-foreground">{displayEmail}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="badge-premium">
-                  <RoleIcon className="h-3 w-3 mr-1" />
-                  {getRoleLabel()}
-                </span>
-              </div>
-            </div>
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-bold truncate">{displayName}</h2>
+            <p className="text-sm font-medium text-gray-500">{displayPhone}</p>
+            <span className="inline-block mt-1 text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-semibold uppercase">
+              {displayRole}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Edit Profile Section */}
-      {isEditing ? (
-        <div className="p-4">
-          <div className="card-premium p-6 space-y-4 animate-fade-in">
-            <h3 className="font-semibold font-display">Edit Profile</h3>
-            
-            <div>
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                value={editData.full_name}
-                onChange={(e) => setEditData(prev => ({ ...prev, full_name: e.target.value }))}
-                className="input-premium mt-1.5"
-              />
-            </div>
+      {/* Action Menu */}
+      <nav className="flex-1 p-4 space-y-2">
 
-            <div>
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                value={editData.phone}
-                onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="+91 9876543210"
-                className="input-premium mt-1.5"
-              />
-            </div>
+        {isOwner ? (
+          /* Owner Features */
+          <>
+            <button
+              onClick={() => navigate('/owner/venue')}
+              className="w-full flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 active:bg-muted transition-colors min-h-[52px]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <Building2 className="h-5 w-5 text-blue-600" />
+                </div>
+                <div className="text-left">
+                  <span className="block font-medium">Linked Venues</span>
+                  <span className="text-xs text-gray-500">View & Edit Venue Details</span>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            </button>
 
-            <div className="flex gap-3 pt-2">
-              <Button 
-                variant="outline" 
-                className="flex-1 h-11 rounded-xl"
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                className="flex-1 h-11 btn-premium rounded-xl"
-                onClick={handleSaveProfile}
-                disabled={isSaving}
-              >
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </Button>
+            <button
+              onClick={() => navigate('/owner/venue')} // Reusing venue edit for profile edit as requested context implies venue info
+              className="w-full flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 active:bg-muted transition-colors min-h-[52px]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
+                  <Edit className="h-5 w-5 text-purple-600" />
+                </div>
+                <div className="text-left">
+                  <span className="block font-medium">Edit Profile</span>
+                  <span className="text-xs text-gray-500">Update Venue Information</span>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            </button>
+          </>
+        ) : (
+          /* Customer Features */
+          <>
+            <button
+              onClick={() => navigate('/bookings')}
+              className="w-full flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 active:bg-muted transition-colors min-h-[52px]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <User className="h-5 w-5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <span className="block font-medium">My Bookings</span>
+                  <span className="text-xs text-gray-500">View Booking History</span>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            </button>
+
+            <button
+              onClick={() => toast({ title: 'Coming soon', description: 'Saved venues feature coming soon' })}
+              className="w-full flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 active:bg-muted transition-colors min-h-[52px]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center flex-shrink-0">
+                  <Heart className="h-5 w-5 text-warning" />
+                </div>
+                <span className="font-medium text-left">Saved Venues</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            </button>
+          </>
+        )}
+
+        {/* Support - Common */}
+        <button
+          onClick={() => toast({ title: 'Support', description: 'Email us at support@venuevibe.com' })}
+          className="w-full flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 active:bg-muted transition-colors min-h-[52px]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
+              <Headphones className="h-5 w-5 text-success" />
             </div>
+            <span className="font-medium text-left">Support</span>
           </div>
-        </div>
-      ) : (
-        /* Menu Items */
-        <div className="p-4 space-y-3">
-          <button 
-            onClick={() => setIsEditing(true)}
-            className="card-premium w-full p-4 flex items-center gap-4 animate-fade-in"
-          >
-            <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
-              <User className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="font-medium">Edit Profile</p>
-              <p className="text-sm text-muted-foreground">Update your information</p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </button>
+          <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+        </button>
+      </nav>
 
-          <button 
-            onClick={() => navigate('/bookings')}
-            className="card-premium w-full p-4 flex items-center gap-4 animate-fade-in"
-            style={{ animationDelay: '0.05s' }}
-          >
-            <div className="h-11 w-11 rounded-xl bg-success/10 flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-success" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="font-medium">My Bookings</p>
-              <p className="text-sm text-muted-foreground">View your booking history</p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </button>
+      {/* Logout Button */}
+      <div className="p-4 mt-auto">
+        <Button
+          onClick={handleSignOut}
+          variant="outline"
+          className="w-full h-12 text-destructive border-destructive/30 hover:bg-destructive/5 font-semibold"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
+        </Button>
+      </div>
 
-          <button 
-            className="card-premium w-full p-4 flex items-center gap-4 animate-fade-in"
-            style={{ animationDelay: '0.1s' }}
-          >
-            <div className="h-11 w-11 rounded-xl bg-warning/10 flex items-center justify-center">
-              <CreditCard className="h-5 w-5 text-warning" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="font-medium">Payment Methods</p>
-              <p className="text-sm text-muted-foreground">Manage your payment options</p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </button>
+      {!isOwner && <HomeBottomNav currentTab="profile" onTabChange={(tab) => {
+        if (tab !== 'profile') navigate('/');
+      }} />}
 
-          {/* Role-specific links */}
-          {userRole === 'owner' && (
-            <button 
-              onClick={() => navigate('/owner')}
-              className="card-premium w-full p-4 flex items-center gap-4 animate-fade-in"
-              style={{ animationDelay: '0.15s' }}
-            >
-              <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-medium">Owner Dashboard</p>
-                <p className="text-sm text-muted-foreground">Manage your venues</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </button>
-          )}
-
-          {userRole === 'admin' && (
-            <button 
-              onClick={() => navigate('/admin')}
-              className="card-premium w-full p-4 flex items-center gap-4 animate-fade-in"
-              style={{ animationDelay: '0.15s' }}
-            >
-              <div className="h-11 w-11 rounded-xl bg-secondary/10 flex items-center justify-center">
-                <Shield className="h-5 w-5 text-secondary" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-medium">Admin Dashboard</p>
-                <p className="text-sm text-muted-foreground">Platform management</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </button>
-          )}
-
-          <button 
-            onClick={handleSignOut}
-            className="card-premium w-full p-4 flex items-center gap-4 animate-fade-in border-destructive/20"
-            style={{ animationDelay: '0.2s' }}
-          >
-            <div className="h-11 w-11 rounded-xl bg-destructive/10 flex items-center justify-center">
-              <LogOut className="h-5 w-5 text-destructive" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="font-medium text-destructive">Sign Out</p>
-              <p className="text-sm text-muted-foreground">Log out of your account</p>
-            </div>
-          </button>
-        </div>
-      )}
+      {isOwner && <OwnerNavigation />}
     </div>
   );
 };
