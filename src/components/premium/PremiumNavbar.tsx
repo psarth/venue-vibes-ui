@@ -27,11 +27,11 @@ export const PremiumNavbar = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border shadow-premium-md">
-      <div className="flex items-center justify-between h-14 px-4">
-        {/* Menu Button */}
+      <div className="flex items-center justify-between h-14 px-3 sm:px-4">
+        {/* Menu Button - 44px touch target */}
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-xl hover:bg-muted transition-colors">
+            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-lg active:bg-muted transition-colors">
               <Menu className="h-5 w-5 text-foreground" />
             </Button>
           </SheetTrigger>
