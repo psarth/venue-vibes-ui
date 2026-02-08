@@ -1,6 +1,6 @@
 
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { venues, Venue, Slot } from '@/data/venues';
 import { FilterBar } from '@/components/home/FilterBar';
 import { LocationSelector } from '@/components/home/LocationSelector';
@@ -36,27 +36,6 @@ const Index = () => {
   const [updateTrigger, setUpdateTrigger] = useState(0); // Force re-render on sync
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // 🔥 Handle pre-filled state from Find Player page
-  useEffect(() => {
-    if (location.state && (syncedVenues.length > 0 || venues.length > 0)) {
-      const { sport, date, city, venueId } = location.state as any;
-      if (sport) setSelectedSport(sport);
-      if (city) setSelectedCity(city);
-      if (date) setSelectedDate(new Date(date));
-
-      if (venueId) {
-        // Look in both local and synced venues
-        const allPossible = [...venues];
-        const venue = allPossible.find(v => v.id === venueId);
-        if (venue) {
-          setSelectedVenue(venue);
-          setCurrentView('detail');
-        }
-      }
-    }
-  }, [location.state, syncedVenues]);
 
   // 🔥 REAL-TIME SYNC: Listen for venue updates
   useEffect(() => {
@@ -107,10 +86,8 @@ const Index = () => {
     setActiveTab(tab);
     if (tab === 'profile') {
       navigate('/profile');
-    } else if (tab === 'my-games') {
+    } else if (tab === 'my-games' || tab === 'book') {
       navigate('/bookings');
-    } else if (tab === 'find-player') {
-      navigate('/find-player');
     }
   };
 
@@ -193,91 +170,66 @@ const Index = () => {
 
   // 🔥 SPORT-WISE FILTER LOGIC WITH REAL-TIME SYNC
   const sections = useMemo(() => {
-    const allExpanded: Venue[] = [];
+    // Combine static venues with synced venues
+    const allVenues = [...localVenues];
 
-    // Helper to process any venue object (local or mapped synced)
-    const addExpandedEntries = (v: any) => {
-      const venueSports = v.sports || (v.sport ? [v.sport] : []);
-      // Requirement: If it has multiple sports, show it in 'Multiple Sport Venue' section
-      // and also in each of its respective sport sections.
-      const isMulti = venueSports.length > 1 || v.sport === 'Multi-Sport';
-
-      if (isMulti) {
-        allExpanded.push({
-          ...v,
-          id: `${v.id}_Multi-Sport`,
-          sport: 'Multi-Sport'
+    // Convert synced venues to Venue format and add them
+    syncedVenues.forEach(syncedVenue => {
+      // Check if venue already exists (avoid duplicates)
+      if (!allVenues.find(v => v.id === syncedVenue.id)) {
+        // For each sport, create a venue entry
+        syncedVenue.sports.forEach(sport => {
+          const venueEntry: Venue = {
+            id: `${syncedVenue.id}_${sport}`,
+            name: syncedVenue.name,
+            location: syncedVenue.address,
+            city: syncedVenue.city || 'Kolkata',
+            sport: sport,
+            pricePerHour: syncedVenue.pricePerSlot,
+            rating: syncedVenue.rating || 4.5,
+            reviewCount: 0,
+            image: syncedVenue.images[0] || 'https://images.unsplash.com/photo-1626224583764-847890e05851?w=800&q=80',
+            gallery: syncedVenue.images || [],
+            description: syncedVenue.description || '',
+            amenities: syncedVenue.amenities || ['Parking', 'Water'],
+            rules: [],
+            sports: syncedVenue.sports,
+            sportResources: syncedVenue.sportResources,
+            convenienceFee: syncedVenue.convenienceFee,
+            feeType: syncedVenue.feeType,
+            isFeeEnabled: syncedVenue.isFeeEnabled
+          };
+          allVenues.push(venueEntry);
         });
       }
-
-      // Also add to each individual sport it supports
-      venueSports.forEach((s: string) => {
-        if (s !== 'Multi-Sport') {
-          allExpanded.push({
-            ...v,
-            id: `${v.id}_${s}`,
-            sport: s
-          });
-        }
-      });
-    };
-
-    // 1. Process local static venues
-    localVenues.forEach(addExpandedEntries);
-
-    // 2. Process synced venues from owners
-    syncedVenues.forEach(sv => {
-      const mappedVenue: any = {
-        id: sv.id,
-        name: sv.name,
-        location: sv.address,
-        city: sv.city || 'Kolkata',
-        pricePerHour: sv.pricePerSlot,
-        rating: sv.rating || 4.5,
-        reviewCount: 0,
-        image: sv.images[0] || 'https://images.unsplash.com/photo-1626224583764-847890e05851?w=800&q=80',
-        gallery: sv.images || [],
-        description: sv.description || '',
-        amenities: sv.amenities || ['Parking', 'Water'],
-        rules: [],
-        sports: sv.sports,
-        sportResources: sv.sportResources,
-        convenienceFee: sv.convenienceFee,
-        feeType: sv.feeType,
-        isFeeEnabled: sv.isFeeEnabled
-      };
-      addExpandedEntries(mappedVenue);
     });
 
-    // 3. Filter by City (Strict match)
-    const cityFiltered = allExpanded.filter(v => v.city === selectedCity);
+    // Filter by City (Strict match)
+    const cityFiltered = allVenues.filter(v => {
+      const match = v.city === selectedCity;
+      return match;
+    });
 
-    console.log(`📍 Filtering for ${selectedCity}: Found ${cityFiltered.length} logical entries`);
+    console.log(`📍 Filtering for ${selectedCity}: Found ${cityFiltered.length} venues`);
 
-    // 4. Filter by Sport selection from FilterBar
-    let filtered = cityFiltered;
+    let filteredVenues = cityFiltered;
+
+    // Filter by Sport (sport-wise discovery)
     if (selectedSport !== 'All Sports') {
-      filtered = filtered.filter(v => v.sport === selectedSport);
+      filteredVenues = filteredVenues.filter(v => v.sport === selectedSport);
     }
 
-    // 5. Group by sport for rendering sections
+    // Group by sport
     const groups: { [key: string]: Venue[] } = {};
-    filtered.forEach(venue => {
+    filteredVenues.forEach(venue => {
       if (!groups[venue.sport]) groups[venue.sport] = [];
       groups[venue.sport].push(venue);
     });
 
-    // 6. Sort groups so Multi-Sport appears first if it exists
-    const sortedSportKeys = Object.keys(groups).sort((a, b) => {
-      if (a === 'Multi-Sport') return -1;
-      if (b === 'Multi-Sport') return 1;
-      return a.localeCompare(b);
-    });
-
-    // Return array of sections with readable titles
-    return sortedSportKeys.map((sport) => ({
-      title: sport === 'Multi-Sport' ? 'Multiple Sport Venues' : sport,
-      data: groups[sport]
+    // Return array of sections
+    return Object.entries(groups).map(([sport, data]) => ({
+      title: sport,
+      data
     }));
   }, [selectedSport, selectedAvailability, selectedCity, syncedVenues, localVenues, updateTrigger]);
 

@@ -22,7 +22,6 @@ interface FilterBarProps {
 
 const sportsList = [
     'All Sports',
-    'Multi-Sport',
     'Football',
     'Cricket',
     'Badminton',

@@ -4,9 +4,8 @@ import { ArrowLeft, Calendar, MapPin, Clock, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { format, isBefore, isPast } from 'date-fns';
+import { format } from 'date-fns';
 import { PremiumBottomNav } from '@/components/premium';
-import { VenueReviewForm } from '@/components/reviews/VenueReviewForm';
 
 interface Booking {
   id: string;
@@ -275,19 +274,6 @@ const MyBookings = () => {
           ))
         )}
       </div>
-
-      {/* Review Modal */}
-      {selectedBookingForReview && (
-        <VenueReviewForm
-          venueId={selectedBookingForReview.venues?.name || 'unknown'} // In a real app we'd use index/id
-          venueName={selectedBookingForReview.venues?.name || 'Venue'}
-          bookingId={selectedBookingForReview.id}
-          userId={user?.id || demoUser?.id?.toString() || ''}
-          userName={user?.email?.split('@')[0] || demoUser?.name || 'Player'}
-          isOpen={isReviewModalOpen}
-          onClose={() => setIsReviewModalOpen(false)}
-        />
-      )}
 
       {/* Bottom Navigation */}
       <PremiumBottomNav />

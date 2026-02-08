@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AdminThemeProvider } from '@/contexts/AdminThemeContext';
 import { useAuth } from '@/hooks/useAuth';
 import AdminLayout from '@/layouts/AdminLayout';
-import { Calendar, DollarSign, Users2, Building2, Loader2, TrendingUp, IndianRupee, Shield, MessageSquare } from 'lucide-react';
+import { Calendar, DollarSign, Users2, Building2, Loader2, TrendingUp, IndianRupee, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminTheme } from '@/contexts/AdminThemeContext';
 
@@ -22,26 +22,34 @@ const AdminDashboardContent = () => {
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  if (userRole !== 'admin') {
-    navigate('/auth');
-    return null;
-  }
-
   useEffect(() => {
     const fetchStats = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setStats({
-        totalBookings: 2847,
-        totalRevenue: 2450000,
-        totalCustomers: 1247,
-        totalVenues: 45,
-        platformEarnings: 294000,
-        growthRate: 23.5
-      });
-      setLoading(false);
+      try {
+        setLoading(true);
+        await new Promise(resolve => setTimeout(resolve, 800));
+        setStats({
+          totalBookings: 2847,
+          totalRevenue: 2450000,
+          totalCustomers: 1247,
+          totalVenues: 45,
+          platformEarnings: 294000,
+          growthRate: 23.5
+        });
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        setLoading(false);
+      }
     };
-    fetchStats();
-  }, []);
+
+    if (userRole === 'admin') {
+      fetchStats();
+    }
+  }, [userRole]);
+
+  if (userRole !== 'admin') {
+    return null;
+  }
 
   if (loading) {
     return (
@@ -91,13 +99,6 @@ const AdminDashboardContent = () => {
       icon: Users2,
       path: '/admin/customers',
       color: 'yellow'
-    },
-    {
-      title: 'Review Management',
-      description: 'Moderate venue & site reviews',
-      icon: MessageSquare,
-      path: '/admin/reviews',
-      color: 'orange'
     }
   ];
 
@@ -108,7 +109,6 @@ const AdminDashboardContent = () => {
       case 'purple': return 'from-purple-500/10 to-purple-600/5 border-purple-500/20 hover:border-purple-500/40';
       case 'yellow': return 'from-yellow-500/10 to-yellow-600/5 border-yellow-500/20 hover:border-yellow-500/40';
       case 'red': return 'from-red-500/10 to-red-600/5 border-red-500/20 hover:border-red-500/40';
-      case 'orange': return 'from-orange-500/10 to-orange-600/5 border-orange-500/20 hover:border-orange-500/40';
       default: return 'from-gray-500/10 to-gray-600/5 border-gray-500/20 hover:border-gray-500/40';
     }
   };
@@ -120,7 +120,6 @@ const AdminDashboardContent = () => {
       case 'purple': return 'text-purple-400';
       case 'yellow': return 'text-yellow-400';
       case 'red': return 'text-red-400';
-      case 'orange': return 'text-orange-400';
       default: return 'text-gray-400';
     }
   };

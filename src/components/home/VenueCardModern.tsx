@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Venue } from '@/data/venues';
 import { cn } from "@/lib/utils";
-import { Star, MapPin, Calendar, Clock, ChevronRight } from 'lucide-react';
+import { Star, MapPin, Calendar, Clock } from 'lucide-react';
 
 interface VenueCardModernProps {
     venue: Venue;
@@ -103,49 +103,51 @@ export const VenueCardModern: React.FC<VenueCardModernProps> = ({ venue, onClick
             </div>
 
             {/* Content Section */}
-            <div className="p-5 flex flex-col gap-3.5 flex-1 bg-white">
+            <div className="p-4 flex flex-col gap-3 flex-1">
+
                 {/* Header Info */}
-                <div className="space-y-1">
-                    <div className="flex justify-between items-start">
-                        <h3 className="font-bold text-base md:text-lg leading-tight text-gray-900 line-clamp-1 flex-1 group-hover:text-primary transition-colors">
+                <div>
+                    <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-bold text-lg leading-tight text-gray-900 line-clamp-1 flex-1 pr-2 group-hover:text-primary transition-colors">
                             {venue.name}
                         </h3>
                     </div>
 
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-tight">
-                        <span className="text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
+                        <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase">
                             {venue.sport}
                         </span>
                         <span>•</span>
-                        <span className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" /> {venue.city || 'Kolkata'} ({distance} km)
+                        <span className="flex items-center gap-0.5">
+                            <MapPin className="w-3 h-3" /> {distance} km
                         </span>
                     </div>
                 </div>
 
-                {/* Date & Time Mock - Simplified for card */}
-                <div className="flex items-center gap-2 py-2 px-3 bg-gray-50 rounded-xl border border-gray-100/50">
-                    <Clock className="w-3.5 h-3.5 text-blue-500" />
-                    <span className="text-[11px] font-bold text-gray-600">Available Today: 6:00 PM - 11 PM</span>
-                </div>
-
-                {/* Footer: Price & Rating */}
-                <div className="flex items-center justify-between mt-auto pt-2">
-                    <div className="flex items-center gap-1.5 bg-yellow-400/10 px-2 py-1 rounded-lg">
-                        <Star className="w-3.5 h-3.5 text-yellow-600 fill-yellow-600" />
-                        <span className="text-xs font-black text-yellow-700">{venue.rating}</span>
-                        <span className="text-[10px] text-yellow-600/60 font-bold">({venue.reviewCount || '20+'})</span>
+                {/* Date & Time Mock */}
+                <div className="flex items-center gap-3 py-2 border-t border-b border-gray-50">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
+                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                        <span>Today</span>
                     </div>
-
-                    <div className="text-right">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter leading-none">Price per hour</p>
-                        <p className="text-xl font-black text-primary tracking-tight">₹{venue.pricePerHour}</p>
+                    <div className="w-px h-3 bg-gray-200" />
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
+                        <Clock className="w-3.5 h-3.5 text-gray-400" />
+                        <span>6:00 PM - 7:00 PM</span>
                     </div>
                 </div>
 
-                <div className="pt-1">
-                    <button className="w-full bg-primary hover:bg-primary/90 text-white font-black py-3 px-4 rounded-xl transition-all shadow-xl shadow-blue-100 active:scale-[0.98] text-sm flex items-center justify-center gap-2 group">
-                        Book Now <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                {/* Footer: Price & CTA */}
+                <div className="flex items-center justify-between mt-auto pt-1 gap-3">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-gray-400 font-medium uppercase">Price</span>
+                        <div className="flex items-baseline gap-0.5">
+                            <span className="text-lg font-bold text-gray-900">₹{venue.pricePerHour}</span>
+                        </div>
+                    </div>
+
+                    <button className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold py-2.5 px-4 rounded-xl transition-all shadow-lg shadow-primary/20 active:scale-[0.98] text-sm">
+                        Book Now
                     </button>
                 </div>
             </div>

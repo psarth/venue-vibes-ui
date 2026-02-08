@@ -36,14 +36,15 @@ const AdminRevenueContent = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('week');
 
+  useEffect(() => {
+    if (userRole === 'admin') {
+      fetchRevenueData();
+    }
+  }, [selectedPeriod, userRole]);
+
   if (userRole !== 'admin') {
-    navigate('/auth');
     return null;
   }
-
-  useEffect(() => {
-    fetchRevenueData();
-  }, [selectedPeriod]);
 
   const fetchRevenueData = async () => {
     try {

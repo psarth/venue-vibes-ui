@@ -4,9 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-
-// PAGE IMPORTS
-import FindPlayer from "@/pages/FindPlayer";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -23,8 +20,7 @@ import AdminVenues from "./pages/AdminVenues";
 import AdminBookings from "./pages/AdminBookings";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminRevenue from "./pages/AdminRevenue";
-import AdminCustomers from "@/pages/AdminCustomers";
-import AdminReviews from "@/pages/AdminReviews";
+import AdminCustomers from "./pages/AdminCustomers";
 import AdminMore from "./pages/AdminMore";
 import AdminVenueApprovals from "./pages/AdminVenueApprovals";
 import SyncDemo from "./pages/SyncDemo";
@@ -109,7 +105,6 @@ const App = () => (
               <Route path="/" element={<CustomerOnlyRoute element={<Index />} />} />
               <Route path="/profile" element={<AuthenticatedRoute element={<Profile />} />} />
               <Route path="/bookings" element={<CustomerOnlyRoute element={<MyBookings />} />} />
-              <Route path="/find-player" element={<AuthenticatedRoute element={<FindPlayer />} />} />
 
               {/* OWNER ROUTES - Protected from customer/admin access */}
               <Route path="/owner" element={<OwnerOnlyRoute element={<OwnerDashboard />} />} />
@@ -128,7 +123,6 @@ const App = () => (
               <Route path="/admin/revenue" element={<AdminOnlyRoute element={<AdminRevenue />} />} />
               <Route path="/admin/customers" element={<AdminOnlyRoute element={<AdminCustomers />} />} />
               <Route path="/admin/approvals" element={<AdminOnlyRoute element={<AdminVenueApprovals />} />} />
-              <Route path="/admin/reviews" element={<AdminOnlyRoute element={<AdminReviews />} />} />
 
               {/* AUTH - Available to all */}
               <Route path="/auth" element={<Auth />} />

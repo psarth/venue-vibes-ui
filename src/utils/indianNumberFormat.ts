@@ -16,7 +16,7 @@ export const formatIndianNumber = (num: number): string => {
   
   // Split into integer and decimal parts
   const parts = numStr.split('.');
-  let integerPart = parts[0];
+  const integerPart = parts[0];
   const decimalPart = parts[1] ? `.${parts[1]}` : '';
   
   // Apply Indian numbering system

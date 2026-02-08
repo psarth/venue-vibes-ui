@@ -7,8 +7,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { HomeBottomNav } from '@/components/home/HomeBottomNav';
 import OwnerNavigation from '@/components/OwnerNavigation';
-import { SiteReviewForm } from '@/components/reviews/SiteReviewForm';
-import { MessageSquare } from 'lucide-react';
 
 interface Profile {
   full_name: string | null;
@@ -176,17 +174,6 @@ const Profile = () => {
           </div>
           <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
         </button>
-
-        {/* Site Feedback Section - CUSTOMER ONLY */}
-        {!isOwner && (
-          <div className="pt-6 space-y-4">
-            <div className="flex items-center gap-2 px-1">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              <h3 className="font-bold text-gray-900 font-display">App Feedback</h3>
-            </div>
-            <SiteReviewForm userId={user?.id || demoUser?.id?.toString() || ''} />
-          </div>
-        )}
       </nav>
 
       {/* Logout Button */}
@@ -202,10 +189,7 @@ const Profile = () => {
       </div>
 
       {!isOwner && <HomeBottomNav currentTab="profile" onTabChange={(tab) => {
-        if (tab === 'profile') return;
-        if (tab === 'find-player') navigate('/find-player');
-        else if (tab === 'my-games') navigate('/bookings');
-        else navigate('/');
+        if (tab !== 'profile') navigate('/');
       }} />}
 
       {isOwner && <OwnerNavigation />}

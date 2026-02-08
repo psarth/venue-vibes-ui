@@ -1,22 +1,9 @@
-
 import { useState, useMemo, useEffect } from 'react';
-import {
-  ArrowLeft, Star, MapPin, Clock, Share2, Bookmark,
-  ChevronRight, Wifi, Car, Droplets, Dumbbell, Coffee,
-  ShieldCheck, Trophy, Zap, Users, Bath, Shirt, Wind,
-  Info, MessageSquare, History, CheckCircle2
-} from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Clock, Share2, Bookmark, ChevronRight, Wifi, Car, Droplets, Dumbbell, Coffee, ShieldCheck, Trophy, Zap, Users, Bath, Shirt, Wind, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Venue } from '@/data/venues';
+import { Venue, Slot } from '@/data/venues';
 import { cn } from "@/lib/utils";
 import { listenForVenueUpdates } from '@/utils/venueSync';
-import { VenueReviewList } from '@/components/reviews/VenueReviewList';
-import { getVenueStats } from '@/utils/reviewStorage';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { VenueReviewForm } from '@/components/reviews/VenueReviewForm';
-import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface VenueDetailProps {
   venue: Venue;
@@ -41,55 +28,23 @@ const amenityIcons: Record<string, any> = {
 };
 
 export const PremiumVenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) => {
-  const { user, demoUser } = useAuth();
   const [currentVenue, setCurrentVenue] = useState(venue);
-  const [selectedSport, setSelectedSport] = useState(() => {
-    if (venue.sport === 'Multi-Sport' && venue.sports && venue.sports.length > 0) {
-      return venue.sports[0];
-    }
-    return venue.sport || (venue.sports && venue.sports.length > 0 ? venue.sports[0] : 'Badminton');
-  });
-  const [hasPastBooking, setHasPastBooking] = useState(false);
-  const [eligibleBookingId, setEligibleBookingId] = useState<string | null>(null);
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [reviewUpdateTrigger, setReviewUpdateTrigger] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [selectedSport, setSelectedSport] = useState(currentVenue.sport || 'Badminton');
 
-  const stats = useMemo(() => {
-    return getVenueStats(venue.name);
-  }, [venue.name, reviewUpdateTrigger]);
-
-  useEffect(() => {
-    const checkEligibility = async () => {
-      if (demoUser) {
-        if (venue.name.includes('Smash Zone')) {
-          setHasPastBooking(true);
-          setEligibleBookingId('3');
-        }
-        return;
-      }
-      if (!user) return;
-      const { data } = await supabase
-        .from('bookings')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-        .limit(1);
-
-      if (data && data.length > 0) {
-        setHasPastBooking(true);
-        setEligibleBookingId(data[0].id);
-      }
-    };
-    checkEligibility();
-  }, [user, demoUser, venue.id]);
-
+  // Real-time sync
   useEffect(() => {
     const unsub = listenForVenueUpdates((updated) => {
       if (updated.id === venue.id.split('_')[0]) {
         setCurrentVenue(prev => ({
           ...prev,
-          ...updated,
-          image: updated.images?.[0] || prev.image,
+          name: updated.name,
+          location: updated.address,
+          description: updated.description,
+          amenities: updated.amenities || [],
+          sports: updated.sports,
+          sportResources: updated.sportResources,
+          image: updated.images[0] || prev.image,
           gallery: updated.images || prev.gallery
         }));
       }
@@ -97,302 +52,201 @@ export const PremiumVenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) 
     return unsub;
   }, [venue.id]);
 
+  // Scroll to top
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Sports list - use real sports from venue
   const sports = useMemo(() => {
-    let list = [];
-    if (currentVenue.sports && currentVenue.sports.length > 0) {
-      list = currentVenue.sports;
-    } else {
-      list = [currentVenue.sport].filter(Boolean);
-    }
-    // Filter out 'Multi-Sport' from the selection list as it's a category, not a bookable sport
-    return list.filter(s => s !== 'Multi-Sport');
+    if (currentVenue.sports && currentVenue.sports.length > 0) return currentVenue.sports;
+    return [currentVenue.sport].filter(Boolean);
   }, [currentVenue.sports, currentVenue.sport]);
+
+  const currentResourceCount = useMemo(() => {
+    return currentVenue.sportResources?.[selectedSport] || 1;
+  }, [currentVenue.sportResources, selectedSport]);
 
   const getResourceLabel = (sport: string) => {
     const s = sport.toLowerCase();
-    if (s.includes('cricket')) return 'Pitch';
-    if (s.includes('football')) return 'Turf';
-    if (s.includes('badminton') || s.includes('tennis') || s.includes('squash') || s.includes('basketball') || s.includes('volleyball')) return 'Court';
-    if (s.includes('table tennis') || s.includes('snooker') || s.includes('billiards')) return 'Table';
-    if (s.includes('swimming')) return 'Lane';
-    if (s.includes('gym')) return 'Station';
-    return 'Slot';
-  };
-
-  // Helper to get count for a sport
-  const getSportCount = (sport: string) => {
-    return currentVenue.sportResources?.[sport] || 1;
+    if (s.includes('cricket') || s.includes('football')) return 'Turfs';
+    if (s.includes('table tennis') || s.includes('snooker')) return 'Tables';
+    if (s.includes('swimming')) return 'Lanes';
+    return 'Courts';
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center">
-      {/* 1. HERO SECTION - Immersive */}
-      <div className="relative h-[45vh] min-h-[350px] w-full overflow-hidden">
-        <img
-          src={currentVenue.image}
-          alt={currentVenue.name}
-          className="w-full h-full object-cover scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+    <div className="min-h-screen bg-white pb-24 relative">
+      {/* HEADER Section */}
+      <div className="relative h-72 w-full">
+        {/* Background Image with Gradient Overlay */}
+        <div className="absolute inset-0">
+          <img
+            src={currentVenue.image}
+            alt={currentVenue.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-blue-900/90 via-blue-900/40 to-transparent" />
+        </div>
 
-        {/* Navigation Bar */}
-        <div className="absolute top-0 left-0 right-0 p-4 pt-safe-top flex justify-between items-center z-10 w-full max-w-5xl mx-auto">
+        {/* Top Bar Navigation */}
+        <div className="absolute top-0 left-0 right-0 p-4 pt-safe-top flex justify-between items-center z-10">
           <button
             onClick={onBack}
-            className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center text-white border border-white/20 hover:bg-white/30 transition-all shadow-xl"
+            className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/30 transition-all"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="flex gap-2">
-            <button className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center text-white border border-white/20 hover:bg-white/30 transition-all shadow-xl">
-              <Share2 className="w-4 h-4" />
+          <div className="flex gap-3">
+            <button className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/30 transition-all">
+              <Share2 className="w-5 h-5" />
             </button>
-            <button className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center text-white border border-white/20 hover:bg-white/30 transition-all shadow-xl">
-              <Bookmark className="w-4 h-4" />
+            <button className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/30 transition-all">
+              <Bookmark className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Venue Title Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 w-full max-w-5xl mx-auto text-white">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="flex flex-col gap-3 max-w-2xl">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className="bg-blue-600 hover:bg-blue-700 text-white border-none px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg shadow-lg">
-                  Verified Venue
-                </Badge>
-                <div className="flex items-center gap-1.5 bg-yellow-400 text-black px-2 py-1 rounded-lg text-xs font-black shadow-lg">
-                  <Star className="w-3.5 h-3.5 fill-current" /> {stats.avg || currentVenue.rating}
-                  <span className="text-[10px] opacity-60 font-bold">({stats.count || currentVenue.reviewCount} Reviews)</span>
-                </div>
-              </div>
-
-              <h1 className="text-3xl md:text-5xl font-black font-display tracking-tight leading-[0.9] drop-shadow-xl">
-                {currentVenue.name}
-              </h1>
-
-              <div className="flex items-center gap-4 text-white/90">
-                <span className="text-sm md:text-base font-bold flex items-center gap-1.5 drop-shadow-md">
-                  <MapPin className="w-4 h-4 text-blue-400" /> {currentVenue.location.split(',')[0]}
+        {/* Venue Info Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+          <div className="flex justify-between items-end">
+            <div>
+              <h1 className="text-2xl font-bold mb-2">{currentVenue.name}</h1>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="bg-yellow-400 text-black text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+                  {currentVenue.rating} <Star className="w-3 h-3 fill-black text-black" />
                 </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
-                <span className="text-sm md:text-base font-bold flex items-center gap-1.5 drop-shadow-md">
-                  <Clock className="w-4 h-4 text-green-400" /> Open: 6 AM - 11 PM
-                </span>
-              </div>
-            </div>
-
-            {/* Price Highlight for Mobile only (Footer still exists) */}
-            <div className="md:hidden flex flex-col items-start bg-white/10 backdrop-blur-xl border border-white/20 p-4 rounded-3xl self-start">
-              <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">Pricing</span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black text-white">₹{currentVenue.pricePerHour}</span>
-                <span className="text-xs font-bold text-white/60">/hr</span>
+                <span className="text-sm text-blue-100">({currentVenue.reviewCount} Reviews)</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. MAIN CONTENT - Optimized Grid */}
-      <div className="w-full flex-1 -mt-10 bg-white md:bg-transparent rounded-t-[2.5rem] relative z-20 pb-32">
-        <div className="max-w-5xl mx-auto px-4 md:px-0">
+      {/* Content Section */}
+      <div className="px-5 py-6 space-y-8 animate-fade-in-up">
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column: Essential Details & Tabs */}
-            <div className="lg:col-span-2 space-y-8 bg-white md:rounded-[2.5rem] md:p-8 md:shadow-sm border-gray-100">
-
-              <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="w-full bg-gray-50/80 p-1.5 rounded-2xl mb-8 border border-gray-100 h-14 backdrop-blur-sm">
-                  <TabsTrigger value="overview" className="flex-1 rounded-xl text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-primary h-full">
-                    Overview
-                  </TabsTrigger>
-                  <TabsTrigger value="amenities" className="flex-1 rounded-xl text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-primary h-full">
-                    Facilities
-                  </TabsTrigger>
-                  <TabsTrigger value="reviews" className="flex-1 rounded-xl text-sm font-bold data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-primary h-full">
-                    Reviews
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="overview" className="space-y-10 animate-in fade-in slide-in-from-bottom-2">
-                  {/* About Section */}
-                  <section>
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                        <Info className="w-4 h-4 text-primary" />
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 font-display">About Venue</h3>
-                    </div>
-                    <p className="text-sm md:text-base text-gray-500 leading-relaxed max-w-none">
-                      {currentVenue.description}
-                    </p>
-                  </section>
-
-                  {/* Sport Selection Grid */}
-                  <section className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center">
-                          <Zap className="w-4 h-4 text-yellow-500" />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900 font-display">Choose Sport</h3>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      {sports.map((sport) => {
-                        const isActive = selectedSport === sport;
-                        const label = getResourceLabel(sport);
-                        const count = getSportCount(sport);
-
-                        return (
-                          <button
-                            key={sport}
-                            onClick={() => setSelectedSport(sport)}
-                            className={cn(
-                              "flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 transition-all duration-300 group",
-                              isActive
-                                ? "bg-primary border-primary shadow-xl shadow-blue-100 scale-[1.02]"
-                                : "bg-white border-gray-100 hover:border-primary/20 hover:bg-gray-50"
-                            )}
-                          >
-                            <span className={cn(
-                              "text-sm font-black mb-1 transition-colors",
-                              isActive ? "text-white" : "text-gray-900"
-                            )}>
-                              {sport}
-                            </span>
-                            <span className={cn(
-                              "text-[10px] font-bold uppercase tracking-wider transition-colors",
-                              isActive ? "text-white/60" : "text-gray-400 group-hover:text-primary/60"
-                            )}>
-                              {count} {count > 1 ? label + 's' : label}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </section>
-                </TabsContent>
-
-                <TabsContent value="amenities" className="animate-in fade-in slide-in-from-bottom-2">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {currentVenue.amenities.map((amenity) => {
-                      const Icon = amenityIcons[amenity] || Wifi;
-                      return (
-                        <div
-                          key={amenity}
-                          className="flex flex-col items-center justify-center p-6 rounded-3xl bg-gray-50 border border-gray-100 transition-all hover:bg-white hover:border-primary/20 hover:shadow-xl group"
-                        >
-                          <div className="p-3 bg-white rounded-2xl mb-3 shadow-sm group-hover:bg-primary/5 transition-colors">
-                            <Icon className="w-6 h-6 text-gray-400 group-hover:text-primary" />
-                          </div>
-                          <span className="text-[10px] font-black text-gray-500 text-center uppercase tracking-widest group-hover:text-primary">
-                            {amenity}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="reviews" className="animate-in fade-in slide-in-from-bottom-2">
-                  <div className="flex justify-between items-center mb-8">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center">
-                        <MessageSquare className="w-4 h-4 text-primary" />
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 font-display">User Reviews</h3>
-                    </div>
-                    {hasPastBooking && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-xl font-bold border-primary text-primary hover:bg-primary/5 text-xs shadow-sm"
-                        onClick={() => setIsReviewModalOpen(true)}
-                      >
-                        Rate Experience
-                      </Button>
-                    )}
-                  </div>
-                  <VenueReviewList venueId={venue.name} />
-                </TabsContent>
-              </Tabs>
+        {/* Location & Timings */}
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center mt-1">
+              <MapPin className="w-4 h-4 text-primary" />
             </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Location</h3>
+              <p className="text-sm text-gray-500 leading-snug mt-0.5">{currentVenue.location}</p>
+              <p className="text-xs font-medium text-primary mt-1">2.5 km away from you</p>
+            </div>
+          </div>
 
-            {/* Right Column: Dynamic Info Sidebar (Desktop Only) */}
-            <div className="hidden lg:block space-y-6">
-              <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 space-y-8 sticky top-24">
-                <div className="space-y-6">
-                  <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Venue Information</h4>
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center mt-1">
+              <Clock className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Timings</h3>
+              <p className="text-sm text-gray-500 mt-0.5">Open today • 6:00 AM - 11:00 PM</p>
+            </div>
+          </div>
 
-                  <div className="space-y-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                        <MapPin className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-gray-400 uppercase tracking-tight">Full Address</p>
-                        <p className="text-sm font-bold text-gray-700 leading-snug mt-1">{currentVenue.location}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                        <Clock className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-gray-400 uppercase tracking-tight">Operation Hours</p>
-                        <p className="text-sm font-bold text-gray-700 mt-1">Daily: 6:00 AM - 11:00 PM</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
-                        <ShieldCheck className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-gray-400 uppercase tracking-tight">Features</p>
-                        <p className="text-sm font-bold text-gray-700 mt-1">Verified Partner</p>
-                        <p className="text-xs font-medium text-gray-400">Secure Payments Enabled</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-8 border-t border-gray-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-gray-500">Base Price</span>
-                    <span className="text-lg font-black text-gray-900 tracking-tight">₹{currentVenue.pricePerHour}</span>
-                  </div>
-                  <p className="text-[10px] text-gray-400 font-medium">Final price may vary based on slot selection and platform fees.</p>
-                </div>
-              </div>
+          <div className="flex items-start gap-3 p-3 bg-primary/5 rounded-2xl border border-primary/10">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mt-1">
+              <ShieldCheck className="w-4 h-4 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-gray-900">Facility Info</h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                This venue has <span className="font-bold text-primary">{currentResourceCount} {getResourceLabel(selectedSport)}</span> available for booking.
+              </p>
             </div>
           </div>
         </div>
+
+        <div className="h-px bg-gray-100 w-full" />
+
+        {/* Facility Breakdown Section */}
+        {currentVenue.sportResources && Object.keys(currentVenue.sportResources).length > 0 && (
+          <div className="bg-gray-50/80 rounded-3xl p-5 border border-gray-100/50 space-y-4">
+            <div className="flex items-center gap-2 text-gray-900">
+              <Trophy className="w-5 h-5 text-primary" />
+              <h3 className="font-bold text-base leading-none">Facility Breakdown</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {Object.entries(currentVenue.sportResources).map(([sport, count]) => (
+                <div key={sport} className="bg-white px-4 py-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-1">
+                  <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">{sport}</span>
+                  <span className="text-sm font-bold text-primary">{count} {getResourceLabel(sport)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="h-px bg-gray-100 w-full" />
+
+        {/* Sports Selection */}
+        <div>
+          <h3 className="font-bold text-gray-900 mb-3 text-lg">Select Sport</h3>
+          <div className="flex flex-wrap gap-3">
+            {sports.map((sport) => (
+              <button
+                key={sport}
+                onClick={() => setSelectedSport(sport)}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-medium border transition-all",
+                  selectedSport === sport
+                    ? "bg-primary text-white border-primary shadow-md shadow-blue-200"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                )}
+              >
+                {sport}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="h-px bg-gray-100 w-full" />
+
+        {/* Amenities */}
+        <div>
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="font-bold text-gray-900 text-lg">Amenities</h3>
+            <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-full border border-gray-100">{currentVenue.amenities.length} Available</span>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            {currentVenue.amenities.map((amenity) => {
+              const Icon = amenityIcons[amenity] || Wifi;
+              return (
+                <div
+                  key={amenity}
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white border border-gray-100 shadow-sm hover:border-primary/20 hover:bg-primary/5 transition-all group"
+                >
+                  <Icon className="w-4 h-4 text-gray-500 group-hover:text-primary" />
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-primary">{amenity}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="h-px bg-gray-100 w-full" />
+
+        {/* About */}
+        <div>
+          <h3 className="font-bold text-gray-900 text-lg mb-2">About Venue</h3>
+          <p className="text-sm text-gray-500 leading-relaxed line-clamp-4">{venue.description}</p>
+        </div>
+
       </div>
 
-      {/* 3. STICKY FOOTER - Premium Action (Universal) */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-2xl border-t border-gray-100 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.12)] z-50">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-6 px-2">
-          <div className="hidden sm:flex flex-col">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Selected Sport</p>
-            <p className="text-xl font-black text-primary leading-none uppercase tracking-tighter">
-              {selectedSport} <span className="text-gray-300 px-1">/</span> <span className="text-sm text-gray-400">₹{currentVenue.pricePerHour}</span>
-            </p>
-          </div>
-
+      {/* Sticky Footer CTA */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40 pb-safe">
+        <div className="max-w-md mx-auto">
           <Button
             onClick={() => onBook(selectedSport)}
-            className="flex-1 lg:flex-none lg:w-96 h-14 rounded-2xl text-lg font-black bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-blue-400 transition-all active:scale-[0.96] flex items-center justify-center gap-2 group"
+            className="w-full h-12 rounded-xl text-base font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-blue-200 transition-all active:scale-[0.98]"
           >
-            Go to Scheduling <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+            Book Now
           </Button>
         </div>
       </div>

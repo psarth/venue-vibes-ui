@@ -35,14 +35,15 @@ const AdminCustomersContent = () => {
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('all');
 
+  useEffect(() => {
+    if (userRole === 'admin') {
+      fetchCustomerInsights();
+    }
+  }, [selectedFilter, userRole]);
+
   if (userRole !== 'admin') {
-    navigate('/auth');
     return null;
   }
-
-  useEffect(() => {
-    fetchCustomerInsights();
-  }, [selectedFilter]);
 
   const fetchCustomerInsights = async () => {
     try {

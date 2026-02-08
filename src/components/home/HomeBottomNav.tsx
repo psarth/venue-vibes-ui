@@ -2,7 +2,6 @@
 import React from 'react';
 import { Home, Users, Calendar, Trophy, User } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { useAuth } from '@/hooks/useAuth';
 
 interface BottomNavProps {
     currentTab: string;
@@ -10,13 +9,11 @@ interface BottomNavProps {
 }
 
 export const HomeBottomNav: React.FC<BottomNavProps> = ({ currentTab, onTabChange }) => {
-    const { user, demoUser } = useAuth();
-    const isLoggedIn = !!user || !!demoUser;
-
     const tabs = [
         { id: 'home', label: 'Home', icon: Home },
-        { id: 'my-games', label: 'Bookings', icon: Trophy },
-        ...(isLoggedIn ? [{ id: 'find-player', label: 'Find Player', icon: Users }] : []),
+        { id: 'find-players', label: 'Find Players', icon: Users },
+        { id: 'book', label: 'Book', icon: Calendar },
+        { id: 'my-games', label: 'My Games', icon: Trophy },
         { id: 'profile', label: 'Profile', icon: User },
     ];
 
