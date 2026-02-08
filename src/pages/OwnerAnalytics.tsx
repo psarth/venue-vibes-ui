@@ -403,120 +403,109 @@ export default function OwnerAnalytics() {
             </Card>
           </motion.div>
         </div>
-      </motion.div>
-    </OwnerLayout>
-  );
-}
-                      dataKey="revenue"
-                      stroke="#A7C7E7"
-                      strokeWidth={3}
-                      dot={{ r: 5, fill: '#A7C7E7', strokeWidth: 2, stroke: '#121419' }}
-                      activeDot={{ r: 7 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+
+        {/* Sport-wise Performance - Detailed */}
+        <motion.div variants={itemVariants}>
+          <Card className="bg-card border-border/50 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-warning" />
+                Sport-wise Performance
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">Detailed breakdown by sport</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {data.sportWise.map((sport: any, idx: number) => (
+                  <div key={idx} className="bg-background/50 border border-border/30 rounded-xl p-5 hover:border-primary/30 transition-all group">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                        {sport.icon}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-foreground text-lg">{sport.sport}</h4>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <span className={sport.trend.startsWith('+') ? 'text-success' : 'text-destructive'}>{sport.trend}</span>
+                          vs last week
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Bookings</span>
+                        <span className="font-bold text-foreground">{sport.bookings}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Revenue</span>
+                        <span className="font-bold text-foreground">₹{formatIndianNumber(sport.revenue)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Avg Price</span>
+                        <span className="font-bold text-foreground">₹{sport.avgPrice}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Peak Hour</span>
+                        <span className="font-bold text-foreground">{sport.peakHour}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs text-muted-foreground font-semibold">Utilization</span>
+                        <span className="text-xs font-bold text-foreground">{sport.utilization}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2.5">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${sport.utilization}%` }}
+                          transition={{ duration: 1, delay: 0.8 }}
+                          className="bg-primary h-2.5 rounded-full"
+                        ></motion.div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-
-        </div>
-
-        {/* Sport-wise Performance - Detailed */}
-        <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-foreground flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-warning" />
-              Sport-wise Performance
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">Detailed breakdown by sport</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {data.sportWise.map((sport: any, idx: number) => (
-                <div key={idx} className="bg-background/50 border border-border/30 rounded-xl p-5 hover:border-primary/30 transition-all group">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                      {sport.icon}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-foreground text-lg">{sport.sport}</h4>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <span className={sport.trend.startsWith('+') ? 'text-success' : 'text-destructive'}>{sport.trend}</span>
-                        vs last week
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Bookings</span>
-                      <span className="font-bold text-foreground">{sport.bookings}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Revenue</span>
-                      <span className="font-bold text-foreground">₹{formatIndianNumber(sport.revenue)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Avg Price</span>
-                      <span className="font-bold text-foreground">₹{sport.avgPrice}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Peak Hour</span>
-                      <span className="font-bold text-foreground">{sport.peakHour}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs text-muted-foreground font-semibold">Utilization</span>
-                      <span className="text-xs font-bold text-foreground">{sport.utilization}%</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2.5">
-                      <div
-                        className="bg-primary h-2.5 rounded-full transition-all duration-500"
-                        style={{ width: `${sport.utilization}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        </motion.div>
 
         {/* Low Utilization Alerts */}
-        <Card className="bg-card border border-warning/30 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-foreground flex items-center gap-2">
-              <Zap className="w-5 h-5 text-warning" />
-              Low Utilization Alerts
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">Time slots that need attention</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {data.lowUtilization.map((alert: any, idx: number) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-warning/5 border border-warning/20 hover:border-warning/40 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-warning" />
+        <motion.div variants={itemVariants}>
+          <Card className="bg-card border border-warning/30 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <Zap className="w-5 h-5 text-warning" />
+                Low Utilization Alerts
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">Time slots that need attention</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {data.lowUtilization.map((alert: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-warning/5 border border-warning/20 hover:border-warning/40 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                        <Clock className="w-5 h-5 text-warning" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{alert.sport} • {alert.time}</p>
+                        <p className="text-xs text-muted-foreground">Consider promotional pricing</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{alert.sport} • {alert.time}</p>
-                      <p className="text-xs text-muted-foreground">Consider promotional pricing</p>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-warning">{alert.utilization}%</p>
+                      <p className="text-xs text-muted-foreground">utilization</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-warning">{alert.utilization}%</p>
-                    <p className="text-xs text-muted-foreground">utilization</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-      </div>
+      </motion.div>
     </OwnerLayout>
   );
 }
