@@ -2,11 +2,12 @@
 import { useState, useEffect } from 'react';
 import OwnerLayout from '@/layouts/OwnerLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
 import { formatIndianNumber } from '@/utils/indianNumberFormat';
 import { Loader2, TrendingUp, Calendar, DollarSign, Activity, Trophy, Clock, Zap, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function OwnerAnalytics() {
   const [loading, setLoading] = useState(true);
@@ -113,8 +114,20 @@ export default function OwnerAnalytics() {
   if (loading) {
     return (
       <OwnerLayout title="Analytics">
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="flex flex-col justify-center items-center h-64 gap-4">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          >
+            <Loader2 className="w-10 h-10 text-primary" />
+          </motion.div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-muted-foreground font-medium"
+          >
+            Crunching your venue data...
+          </motion.p>
         </div>
       </OwnerLayout>
     )
@@ -122,9 +135,29 @@ export default function OwnerAnalytics() {
 
   const COLORS = ['#2979FF', '#A7C7E7', '#4FC3F7', '#81C784'];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <OwnerLayout title="Analytics" subtitle="Performance & Insights">
-      <div className="space-y-6">
+      <motion.div 
+        className="space-y-6"
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+      >
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -148,30 +181,21 @@ export default function OwnerAnalytics() {
           </div>
 
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant={viewType === 'all' ? 'default' : 'outline'}
-              onClick={() => setViewType('all')}
-              className={viewType === 'all' ? 'bg-primary text-primary-foreground text-xs' : 'bg-background border-border/50 text-foreground text-xs'}
-            >
-              All Days
-            </Button>
-            <Button
-              size="sm"
-              variant={viewType === 'weekday' ? 'default' : 'outline'}
-              onClick={() => setViewType('weekday')}
-              className={viewType === 'weekday' ? 'bg-primary text-primary-foreground text-xs' : 'bg-background border-border/50 text-foreground text-xs'}
-            >
-              Weekdays
-            </Button>
-            <Button
-              size="sm"
-              variant={viewType === 'weekend' ? 'default' : 'outline'}
-              onClick={() => setViewType('weekend')}
-              className={viewType === 'weekend' ? 'bg-primary text-primary-foreground text-xs' : 'bg-background border-border/50 text-foreground text-xs'}
-            >
-              Weekends
-            </Button>
+            {[
+              { id: 'all', label: 'All Days' },
+              { id: 'weekday', label: 'Weekdays' },
+              { id: 'weekend', label: 'Weekends' }
+            ].map(type => (
+              <Button
+                key={type.id}
+                size="sm"
+                variant={viewType === type.id ? 'default' : 'outline'}
+                onClick={() => setViewType(type.id as any)}
+                className={viewType === type.id ? 'bg-primary text-primary-foreground text-xs shadow-sm shadow-primary/20' : 'bg-background border-border/50 text-foreground text-xs'}
+              >
+                {type.label}
+              </Button>
+            ))}
           </div>
         </div>
 
@@ -180,7 +204,15 @@ export default function OwnerAnalytics() {
           {data.insights.map((insight: any, idx: number) => {
             const Icon = insight.icon;
             return (
-              <div key={idx} className="bg-card border border-border/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all group">
+              <motion.div 
+                key={idx} 
+                variants={itemVariants}
+                whileHover={{ y: -5, scale: 1.02 }}
+                className="bg-card border border-border/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all group overflow-hidden relative"
+              >
+                <div className="absolute top-0 right-0 p-1 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <Icon className="w-16 h-16 -mr-4 -mt-4" />
+                </div>
                 <div className="flex items-start justify-between mb-2">
                   <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">{insight.title}</p>
                   <Icon className={`w-4 h-4 ${insight.color} group-hover:scale-110 transition-transform`} />
@@ -190,7 +222,7 @@ export default function OwnerAnalytics() {
                   {insight.trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                   {insight.change}
                 </p>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -198,130 +230,183 @@ export default function OwnerAnalytics() {
         {/* Weekday vs Weekend Comparison */}
         {viewType === 'all' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-card border border-border/50 rounded-xl p-5 shadow-sm">
+            <motion.div 
+              variants={itemVariants}
+              whileHover={{ y: -2 }}
+              className="bg-card border border-border/50 rounded-xl p-5 shadow-sm"
+            >
               <div className="flex items-center gap-2 mb-4">
                 <Calendar className="w-5 h-5 text-primary" />
                 <h3 className="font-bold text-foreground">Weekday Performance</h3>
               </div>
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Total Bookings</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Total Bookings</span>
                   <span className="font-bold text-foreground">{data.comparison.weekday.bookings}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Revenue</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Revenue</span>
                   <span className="font-bold text-foreground">₹{formatIndianNumber(data.comparison.weekday.revenue)}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Avg Utilization</span>
-                  <span className="font-bold text-foreground">{data.comparison.weekday.utilization}%</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Avg Utilization</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 h-1.5 rounded-full bg-border overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${data.comparison.weekday.utilization}%` }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                        className="h-full bg-primary"
+                      />
+                    </div>
+                    <span className="font-bold text-foreground">{data.comparison.weekday.utilization}%</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-card border border-border/50 rounded-xl p-5 shadow-sm">
+            <motion.div 
+              variants={itemVariants}
+              whileHover={{ y: -2 }}
+              className="bg-card border border-border/50 rounded-xl p-5 shadow-sm"
+            >
               <div className="flex items-center gap-2 mb-4">
                 <Calendar className="w-5 h-5 text-success" />
                 <h3 className="font-bold text-foreground">Weekend Performance</h3>
               </div>
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Total Bookings</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Total Bookings</span>
                   <span className="font-bold text-foreground">{data.comparison.weekend.bookings}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Revenue</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Revenue</span>
                   <span className="font-bold text-foreground">₹{formatIndianNumber(data.comparison.weekend.revenue)}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Avg Utilization</span>
-                  <span className="font-bold text-foreground">{data.comparison.weekend.utilization}%</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Avg Utilization</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 h-1.5 rounded-full bg-border overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${data.comparison.weekend.utilization}%` }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                        className="h-full bg-success"
+                      />
+                    </div>
+                    <span className="font-bold text-foreground">{data.comparison.weekend.utilization}%</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Hourly Bookings Chart */}
-          <Card className="bg-card border-border/50 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <Activity className="w-5 h-5 text-primary" />
-                Hourly Bookings
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">Peak hours and booking distribution</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.hourlyBookings}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2C303B" />
-                    <XAxis
-                      dataKey="hour"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#A0A4B8', fontSize: 11 }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#A0A4B8', fontSize: 11 }}
-                    />
-                    <RechartsTooltip
-                      contentStyle={{
-                        borderRadius: '12px',
-                        border: 'none',
-                        backgroundColor: '#121419',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                        color: '#FFFFFF'
-                      }}
-                      cursor={{ fill: '#2C303B' }}
-                    />
-                    <Bar dataKey="bookings" fill="#2979FF" radius={[8, 8, 0, 0]} barSize={24} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <motion.div variants={itemVariants}>
+            <Card className="bg-card border-border/50 shadow-sm overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-primary" />
+                  Hourly Distribution
+                </CardTitle>
+                <CardDescription className="text-muted-foreground text-xs">Peak hours and booking volume</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[280px] w-full mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={data.hourlyBookings}>
+                      <defs>
+                        <linearGradient id="ownerColorBookings" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#2979FF" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#2979FF" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2C303B" />
+                      <XAxis
+                        dataKey="hour"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#A0A4B8', fontSize: 10 }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#A0A4B8', fontSize: 10 }}
+                      />
+                      <RechartsTooltip
+                        contentStyle={{
+                          borderRadius: '12px',
+                          border: 'none',
+                          backgroundColor: '#121419',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                          color: '#FFFFFF'
+                        }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="bookings" 
+                        stroke="#2979FF" 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill="url(#ownerColorBookings)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Weekly Revenue Trend */}
-          <Card className="bg-card border-border/50 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-success" />
-                Weekly Revenue
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">Revenue trend over the week</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={data.weeklyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2C303B" />
-                    <XAxis
-                      dataKey="day"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#A0A4B8', fontSize: 11 }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#A0A4B8', fontSize: 11 }}
-                    />
-                    <RechartsTooltip
-                      contentStyle={{
-                        borderRadius: '12px',
-                        border: 'none',
-                        backgroundColor: '#121419',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                        color: '#FFFFFF'
-                      }}
-                    />
-                    <Line
-                      type="monotone"
+          <motion.div variants={itemVariants}>
+            <Card className="bg-card border-border/50 shadow-sm overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-success" />
+                  Weekly Revenue Trend
+                </CardTitle>
+                <CardDescription className="text-muted-foreground text-xs">Financial performance over 7 days</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[280px] w-full mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.weeklyTrend}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2C303B" />
+                      <XAxis
+                        dataKey="day"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#A0A4B8', fontSize: 10 }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#A0A4B8', fontSize: 10 }}
+                      />
+                      <RechartsTooltip
+                        contentStyle={{
+                          borderRadius: '12px',
+                          border: 'none',
+                          backgroundColor: '#121419',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                          color: '#FFFFFF'
+                        }}
+                      />
+                      <Bar dataKey="revenue" fill="#4ADE80" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </motion.div>
+    </OwnerLayout>
+  );
+}
                       dataKey="revenue"
                       stroke="#A7C7E7"
                       strokeWidth={3}
