@@ -33,14 +33,14 @@ export const venueAPI = {
   getVenues: () => apiRequest('/venues'),
   
   // Create new venue
-  createVenue: (venueData: any) => 
+  createVenue: (venueData: Record<string, unknown>) => 
     apiRequest('/venues', {
       method: 'POST',
       body: JSON.stringify(venueData),
     }),
   
   // Update venue
-  updateVenue: (venueId: string, venueData: any) =>
+  updateVenue: (venueId: string, venueData: Record<string, unknown>) =>
     apiRequest(`/venues/${venueId}`, {
       method: 'PUT',
       body: JSON.stringify(venueData),

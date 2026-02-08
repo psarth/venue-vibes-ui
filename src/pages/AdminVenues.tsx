@@ -45,70 +45,61 @@ const AdminVenuesContent = () => {
   const [feeType, setFeeType] = useState<'fixed' | 'percentage'>('fixed');
   const [isFeeEnabled, setIsFeeEnabled] = useState(true);
 
-  if (userRole !== 'admin') {
-    navigate('/auth');
-    return null;
-  }
-
   useEffect(() => {
     const fetchVenues = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
+      try {
+        setLoading(true);
+        await new Promise(resolve => setTimeout(resolve, 800));
 
-      // Load real synced venues if any
-      const synced = localStorage.getItem('customer_venues');
-      if (synced) {
-        const parsed = JSON.parse(synced);
-        const mapped: Venue[] = parsed.map((v: any) => ({
-          _id: v.id,
-          name: v.name,
-          ownerName: v.ownerName || 'Demo Owner',
-          ownerPhone: v.upiId || 'Not provided',
-          location: v.address,
-          sports: v.sports,
-          status: v.isLive ? 'active' : 'disabled',
-          totalBookings: Math.floor(Math.random() * 200),
-          performance: 'high',
-          convenienceFee: v.convenienceFee,
-          feeType: v.feeType,
-          isFeeEnabled: v.isFeeEnabled
-        }));
-        setVenues(mapped);
-      } else {
-        setVenues([
-          {
-            _id: '1',
-            name: 'PowerPlay Arena',
-            ownerName: 'Rajesh Kumar',
-            ownerPhone: '+91 9876543210',
-            location: 'Indiranagar, Bangalore',
-            sports: ['Cricket', 'Badminton'],
-            status: 'active',
-            totalBookings: 156,
+        // Load real synced venues if any
+        const synced = localStorage.getItem('customer_venues');
+        if (synced) {
+          const parsed = JSON.parse(synced);
+          const mapped: Venue[] = parsed.map((v: any) => ({
+            _id: v.id,
+            name: v.name,
+            ownerName: v.ownerName || 'Demo Owner',
+            ownerPhone: v.upiId || 'Not provided',
+            location: v.address,
+            sports: v.sports,
+            status: v.isLive ? 'active' : 'disabled',
+            totalBookings: Math.floor(Math.random() * 200),
             performance: 'high',
-            convenienceFee: 50,
-            feeType: 'fixed',
-            isFeeEnabled: true
-          },
-          {
-            _id: '2',
-            name: 'SportZone Complex',
-            ownerName: 'Priya Singh',
-            ownerPhone: '+91 9876543211',
-            location: 'Koramangala, Bangalore',
-            sports: ['Football', 'Basketball'],
-            status: 'active',
-            totalBookings: 89,
-            performance: 'medium',
-            convenienceFee: 40,
-            feeType: 'fixed',
-            isFeeEnabled: true
-          }
-        ]);
+            convenienceFee: v.convenienceFee,
+            feeType: v.feeType,
+            isFeeEnabled: v.isFeeEnabled
+          }));
+          setVenues(mapped);
+        } else {
+          setVenues([
+            {
+              _id: '1',
+              name: 'PowerPlay Arena',
+              ownerName: 'Rajesh Kumar',
+              ownerPhone: '9876543210',
+              location: 'Indiranagar',
+              sports: ['Cricket', 'Football'],
+              status: 'active',
+              totalBookings: 156,
+              performance: 'high'
+            }
+          ]);
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching venues:', error);
+        setLoading(false);
       }
-      setLoading(false);
     };
-    fetchVenues();
-  }, []);
+
+    if (userRole === 'admin') {
+      fetchVenues();
+    }
+  }, [userRole]);
+
+  if (userRole !== 'admin') {
+    return null;
+  }
 
   const openFeeDialog = (venue: Venue) => {
     setEditingFeeVenue(venue);

@@ -28,56 +28,52 @@ const AdminBookingsContent = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
-  if (userRole !== 'admin') {
-    navigate('/auth');
-    return null;
-  }
-
   useEffect(() => {
     const fetchBookings = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setBookings([
-        {
-          _id: '1',
-          bookingId: 'BK001',
-          venueName: 'PowerPlay Arena',
-          customerName: 'John Doe',
-          ownerName: 'Rajesh Kumar',
-          date: '2024-01-20',
-          timeSlot: '06:00-07:00',
-          amount: 450,
-          status: 'Confirmed',
-          location: 'Indiranagar'
-        },
-        {
-          _id: '2',
-          bookingId: 'BK002',
-          venueName: 'Cricket Hub',
-          customerName: 'Jane Smith',
-          ownerName: 'Priya Singh',
-          date: '2024-01-20',
-          timeSlot: '18:00-19:00',
-          amount: 1200,
-          status: 'Completed',
-          location: 'Koramangala'
-        },
-        {
-          _id: '3',
-          bookingId: 'BK003',
-          venueName: 'Goal Rush Turf',
-          customerName: 'Mike Johnson',
-          ownerName: 'Amit Patel',
-          date: '2024-01-19',
-          timeSlot: '20:00-21:00',
-          amount: 1800,
-          status: 'Cancelled',
-          location: 'HSR Layout'
-        }
-      ]);
-      setLoading(false);
+      try {
+        setLoading(true);
+        await new Promise(resolve => setTimeout(resolve, 800));
+        setBookings([
+          {
+            _id: '1',
+            bookingId: 'BK001',
+            venueName: 'PowerPlay Arena',
+            customerName: 'John Doe',
+            ownerName: 'Rajesh Kumar',
+            date: '2024-01-20',
+            timeSlot: '06:00-07:00',
+            amount: 450,
+            status: 'Confirmed',
+            location: 'Indiranagar'
+          },
+          {
+            _id: '2',
+            bookingId: 'BK002',
+            venueName: 'Cricket Hub',
+            customerName: 'Jane Smith',
+            ownerName: 'Priya Singh',
+            date: '2024-01-20',
+            timeSlot: '18:00-19:00',
+            amount: 1200,
+            status: 'Confirmed',
+            location: 'Koramangala'
+          }
+        ]);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+        setLoading(false);
+      }
     };
-    fetchBookings();
-  }, []);
+
+    if (userRole === 'admin') {
+      fetchBookings();
+    }
+  }, [userRole]);
+
+  if (userRole !== 'admin') {
+    return null;
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

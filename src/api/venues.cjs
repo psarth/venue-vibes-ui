@@ -1,5 +1,5 @@
 const express = require('express');
-const Venue = require('../models/Venue');
+const Venue = require('../models/Venue.cjs');
 const router = express.Router();
 
 // Get all venues for owner

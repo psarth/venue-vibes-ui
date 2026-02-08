@@ -1,6 +1,6 @@
 const express = require('express');
-const Booking = require('../models/Booking');
-const Venue = require('../models/Venue');
+const Booking = require('../models/Booking.cjs');
+const Venue = require('../models/Venue.cjs');
 const router = express.Router();
 
 // Get all bookings for owner venues

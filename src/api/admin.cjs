@@ -1,8 +1,8 @@
 const express = require('express');
-const User = require('../models/User');
-const Venue = require('../models/Venue');
-const Booking = require('../models/Booking');
-const PlatformSettings = require('../models/PlatformSettings');
+const User = require('../models/User.cjs');
+const Venue = require('../models/Venue.cjs');
+const Booking = require('../models/Booking.cjs');
+const PlatformSettings = require('../models/PlatformSettings.cjs');
 const router = express.Router();
 
 // Admin Overview
