@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const { authenticateToken, requireAdmin, requireOwner } = require('./src/middleware/auth');
+const { authenticateToken, requireAdmin, requireOwner } = require('./src/middleware/auth.cjs');
 
 const app = express();
 
@@ -11,16 +11,13 @@ app.use(cors());
 app.use(express.json());
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/venue-booking', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/venue-booking');
 
 // Import routes
-const adminRoutes = require('./src/api/admin');
-const ownerRoutes = require('./src/api/owner');
-const venueRoutes = require('./src/api/venues');
-const bookingRoutes = require('./src/api/bookings');
+const adminRoutes = require('./src/api/admin.cjs');
+const ownerRoutes = require('./src/api/owner.cjs');
+const venueRoutes = require('./src/api/venues.cjs');
+const bookingRoutes = require('./src/api/bookings.cjs');
 
 // Protected routes with role-based access
 app.use('/api/admin', authenticateToken, requireAdmin, adminRoutes);

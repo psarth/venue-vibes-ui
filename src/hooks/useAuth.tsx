@@ -34,8 +34,8 @@ interface AuthContextType {
   userRole: UserRole | null;
   loading: boolean;
   demoUser: DemoUser | null;
-  signUp: (email: string, password: string, fullName: string, role: UserRole) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, role: UserRole) => Promise<{ error: unknown }>;
+  signIn: (email: string, password: string) => Promise<{ error: unknown }>;
   signOut: () => Promise<void>;
   demoLogin: (email: string, password: string) => { success: boolean; error?: string; route?: string };
   loginWithMobile: (mobile: string, otp: string) => { success: boolean; error?: string; route?: string };

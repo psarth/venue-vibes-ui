@@ -29,6 +29,7 @@ export interface Slot {
 
 export const sports = [
   'All Sports',
+  'Multi-Sport',
   'Badminton',
   'Cricket',
   'Football',

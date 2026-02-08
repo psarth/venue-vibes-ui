@@ -22,26 +22,34 @@ const AdminDashboardContent = () => {
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  if (userRole !== 'admin') {
-    navigate('/auth');
-    return null;
-  }
-
   useEffect(() => {
     const fetchStats = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setStats({
-        totalBookings: 2847,
-        totalRevenue: 2450000,
-        totalCustomers: 1247,
-        totalVenues: 45,
-        platformEarnings: 294000,
-        growthRate: 23.5
-      });
-      setLoading(false);
+      try {
+        setLoading(true);
+        await new Promise(resolve => setTimeout(resolve, 800));
+        setStats({
+          totalBookings: 2847,
+          totalRevenue: 2450000,
+          totalCustomers: 1247,
+          totalVenues: 45,
+          platformEarnings: 294000,
+          growthRate: 23.5
+        });
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        setLoading(false);
+      }
     };
-    fetchStats();
-  }, []);
+
+    if (userRole === 'admin') {
+      fetchStats();
+    }
+  }, [userRole]);
+
+  if (userRole !== 'admin') {
+    return null;
+  }
 
   if (loading) {
     return (

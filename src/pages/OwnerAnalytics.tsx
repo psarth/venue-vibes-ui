@@ -12,7 +12,7 @@ export default function OwnerAnalytics() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'week' | 'month'>('week');
   const [viewType, setViewType] = useState<'weekday' | 'weekend' | 'all'>('all');
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<Record<string, any> | null>(null);
 
   useEffect(() => {
     // Simulate fetching analytical data

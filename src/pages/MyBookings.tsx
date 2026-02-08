@@ -32,6 +32,8 @@ const MyBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   const [isLoading, setIsLoading] = useState(true);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedBookingForReview, setSelectedBookingForReview] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (!loading && !user && !demoUser) {
@@ -150,9 +152,9 @@ const MyBookings = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border shadow-premium-sm">
         <div className="flex items-center gap-4 h-14 px-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-11 w-11 rounded-xl"
             onClick={() => navigate('/')}
           >
@@ -167,21 +169,19 @@ const MyBookings = () => {
         <div className="flex p-1 bg-muted rounded-xl">
           <button
             onClick={() => setActiveTab('upcoming')}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'upcoming'
-                ? 'bg-card text-foreground shadow-premium-sm'
-                : 'text-muted-foreground'
-            }`}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'upcoming'
+              ? 'bg-card text-foreground shadow-premium-sm'
+              : 'text-muted-foreground'
+              }`}
           >
             Upcoming ({upcomingBookings.length})
           </button>
           <button
             onClick={() => setActiveTab('past')}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'past'
-                ? 'bg-card text-foreground shadow-premium-sm'
-                : 'text-muted-foreground'
-            }`}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'past'
+              ? 'bg-card text-foreground shadow-premium-sm'
+              : 'text-muted-foreground'
+              }`}
           >
             Past ({pastBookings.length})
           </button>
@@ -197,12 +197,12 @@ const MyBookings = () => {
               {activeTab === 'upcoming' ? 'No upcoming bookings' : 'No past bookings'}
             </h3>
             <p className="text-muted-foreground mb-4">
-              {activeTab === 'upcoming' 
-                ? 'Book a venue to get started!' 
+              {activeTab === 'upcoming'
+                ? 'Book a venue to get started!'
                 : 'Your booking history will appear here'}
             </p>
             {activeTab === 'upcoming' && (
-              <Button 
+              <Button
                 className="btn-premium"
                 onClick={() => navigate('/')}
               >
@@ -212,7 +212,7 @@ const MyBookings = () => {
           </div>
         ) : (
           displayedBookings.map((booking, index) => (
-            <div 
+            <div
               key={booking.id}
               className="card-premium p-4 animate-fade-in"
               style={{ animationDelay: `${index * 0.05}s` }}
@@ -253,6 +253,23 @@ const MyBookings = () => {
                   <p className="font-semibold text-primary">₹{booking.total_price}</p>
                 </div>
               </div>
+
+              {/* Review Button - ONLY for Completed/Past Bookings */}
+              {booking.status === 'completed' && (
+                <div className="pt-3 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl border-primary text-primary hover:bg-primary/5 text-xs font-bold"
+                    onClick={() => {
+                      setSelectedBookingForReview(booking);
+                      setIsReviewModalOpen(true);
+                    }}
+                  >
+                    Rate Venue
+                  </Button>
+                </div>
+              )}
             </div>
           ))
         )}

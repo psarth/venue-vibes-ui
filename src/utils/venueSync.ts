@@ -392,7 +392,7 @@ export const listenForVenueUpdates = (callback: (venue: VenueData) => void): (()
 /**
  * Listen for price updates (for customer interface)
  */
-export const listenForPriceUpdates = (callback: (data: any) => void): (() => void) => {
+export const listenForPriceUpdates = (callback: (data: unknown) => void): (() => void) => {
     const handler = (event: Event) => {
         const customEvent = event as CustomEvent;
         callback(customEvent.detail);
@@ -408,7 +408,7 @@ export const listenForPriceUpdates = (callback: (data: any) => void): (() => voi
 /**
  * Listen for slot blocking updates (for customer interface)
  */
-export const listenForSlotBlocking = (callback: (data: any) => void): (() => void) => {
+export const listenForSlotBlocking = (callback: (data: unknown) => void): (() => void) => {
     const handler = (event: Event) => {
         const customEvent = event as CustomEvent;
         callback(customEvent.detail);
@@ -430,7 +430,7 @@ export const syncVenueFees = (venueId: string, convenienceFee: number, feeType: 
         const existing = localStorage.getItem(storageKey);
         if (!existing) return;
 
-        let venues: VenueData[] = JSON.parse(existing);
+        const venues: VenueData[] = JSON.parse(existing);
         const index = venues.findIndex(v => v.id === venueId);
 
         if (index !== -1) {
@@ -458,7 +458,7 @@ export const syncVenueFees = (venueId: string, convenienceFee: number, feeType: 
 /**
  * Listen for fee updates
  */
-export const listenForFeeUpdates = (callback: (data: any) => void): (() => void) => {
+export const listenForFeeUpdates = (callback: (data: unknown) => void): (() => void) => {
     const handler = (event: Event) => {
         const customEvent = event as CustomEvent;
         callback(customEvent.detail);

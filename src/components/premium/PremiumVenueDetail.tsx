@@ -250,6 +250,27 @@ export const PremiumVenueDetail = ({ venue, onBack, onBook }: VenueDetailProps) 
           </Button>
         </div>
       </div>
+
+      {/* Review Modal Popups */}
+      {isReviewModalOpen && (
+        <VenueReviewForm
+          venueId={venue.name}
+          venueName={venue.name}
+          bookingId={eligibleBookingId || ''}
+          userId={user?.id || demoUser?.id?.toString() || ''}
+          userName={user?.email?.split('@')[0] || demoUser?.name || 'Player'}
+          isOpen={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+          onSuccess={() => setReviewUpdateTrigger(prev => prev + 1)}
+        />
+      )}
     </div>
   );
 };
+
+// Internal Badge Component for cleaner look
+const Badge = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+  <span className={cn("px-2 py-0.5 text-xs rounded-full font-medium", className)}>
+    {children}
+  </span>
+);

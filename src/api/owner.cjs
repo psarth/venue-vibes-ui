@@ -1,7 +1,7 @@
 const express = require('express');
-const Venue = require('../models/Venue');
-const Booking = require('../models/Booking');
-const PlatformSettings = require('../models/PlatformSettings');
+const Venue = require('../models/Venue.cjs');
+const Booking = require('../models/Booking.cjs');
+const PlatformSettings = require('../models/PlatformSettings.cjs');
 const router = express.Router();
 
 // Owner Overview
