@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { PremiumBottomNav } from '@/components/premium';
+import { VenueReviewForm } from '@/components/reviews/VenueReviewForm';
 
 interface Booking {
   id: string;
@@ -277,6 +278,23 @@ const MyBookings = () => {
 
       {/* Bottom Navigation */}
       <PremiumBottomNav />
+
+      {/* Review Modal */}
+      {selectedBookingForReview && (
+        <VenueReviewForm
+          isOpen={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+          venueId={selectedBookingForReview.venues?.name || 'unknown'}
+          venueName={selectedBookingForReview.venues?.name || 'Venue'}
+          bookingId={selectedBookingForReview.id}
+          userId={user?.id || demoUser?.id?.toString() || 'demo-user'}
+          userName={user?.email?.split('@')[0] || demoUser?.name || 'Player'}
+          onSuccess={() => {
+            setIsReviewModalOpen(false);
+            if (user) fetchBookings();
+          }}
+        />
+      )}
     </div>
   );
 };
